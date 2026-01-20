@@ -1,0 +1,104 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+*.swo
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+*.patch
+*.orig
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/.gradle/
+/android/.idea/
+/android/build/
+/android/local.properties
+/android/*.iml
+
+# macOS/iOS build files
+/macos/Pods/
+/macos/.dart_tool/
+/macos/.idea/
+/macos/build/
+/macos/Flutter/ephemeral/
+/macos/Flutter/Flutter-Generated.xcconfig
+/macos/Flutter/Generated.xcconfig
+/macos/Runner.xcworkspace/xcuserdata/
+/macos/Runner.xcodeproj/xcuserdata/
+
+/ios/Pods/
+/ios/.dart_tool/
+/ios/.idea/
+/ios/build/
+/ios/Flutter/ephemeral/
+/ios/Flutter/Flutter-Generated.xcconfig
+/ios/Flutter/Generated.xcconfig
+/ios/Runner.xcworkspace/xcuserdata/
+/ios/Runner.xcodeproj/xcuserdata/
+
+# Windows/Linux build files
+/windows/build/
+/windows/.idea/
+/linux/build/
+/linux/.idea/
+
+# Web build files
+/web/build/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Local development files
+*.bak
+*.tmp
+*.temp
+
+# Debug logs
+firebase-debug.log
+flutter_stderr.log
+flutter_stdout.log
+
+# Project-specific ignores
+.claude/
+CLAUDE.md
+TASK_COMPLETION_GUIDE.md
+devtools_options.yaml
