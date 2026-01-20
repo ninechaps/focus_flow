@@ -38,28 +38,6 @@ class _TaskItemState extends State<TaskItem> {
   bool _isHovered = false;
   bool _isExpanded = true;
 
-  Color _getPriorityColor(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return const Color(0xFFEF4444); // Red-500
-      case TaskPriority.medium:
-        return const Color(0xFFF59E0B); // Amber-500
-      case TaskPriority.low:
-        return const Color(0xFF22C55E); // Green-500
-    }
-  }
-
-  String _getPrioritySymbol(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return '!!!';
-      case TaskPriority.medium:
-        return '!!';
-      case TaskPriority.low:
-        return '!';
-    }
-  }
-
   Color _parseTagColor(String hexColor) {
     final hex = hexColor.replaceAll('#', '');
     return Color(int.parse('FF$hex', radix: 16));
@@ -107,7 +85,6 @@ class _TaskItemState extends State<TaskItem> {
     final hasSubtasks = widget.subtasks.isNotEmpty;
     final isSubtask = widget.task.parentTaskId != null;
     final isTopLevel = widget.task.parentTaskId == null;
-    final priorityColor = _getPriorityColor(widget.task.priority);
     final dateStr = widget.task.dueDate != null
         ? _formatDate(widget.task.dueDate!)
         : '';
@@ -125,28 +102,16 @@ class _TaskItemState extends State<TaskItem> {
             onTap: () => widget.onTaskTap?.call(widget.task),
             child: Stack(
               children: [
-                // Selection indicator (positioned absolutely to avoid layout shift)
-                if (widget.isSelected)
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 3,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(2),
-                          bottomRight: Radius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
                 // Main content
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingMd,
-                    vertical: AppTheme.spacingSm,
+                  constraints: const BoxConstraints(
+                    minHeight: 48, // Fixed minimum height to prevent layout shift when status changes
+                  ),
+                  padding: EdgeInsets.only(
+                    left: AppTheme.spacingMd + 3, // Add 3px for priority indicator
+                    right: AppTheme.spacingMd,
+                    top: AppTheme.spacingSm,
+                    bottom: AppTheme.spacingSm,
                   ),
                   decoration: BoxDecoration(
                     color: widget.isSelected
@@ -163,20 +128,8 @@ class _TaskItemState extends State<TaskItem> {
                   ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.max,
                 children: [
-                  // Subtask hierarchy indicator
-                  if (isSubtask)
-                    Container(
-                      width: 20,
-                      height: 20,
-                      margin: const EdgeInsets.only(right: 4),
-                      child: CustomPaint(
-                        painter: _SubtaskLinePainter(
-                          color: AppTheme.dividerColor,
-                        ),
-                      ),
-                    ),
-
                   // Expand/collapse button for parent tasks
                   if (hasSubtasks)
                     GestureDetector(
@@ -228,44 +181,31 @@ class _TaskItemState extends State<TaskItem> {
                     ),
                   ),
 
-                  // Priority indicator (inline with title)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: BoxDecoration(
-                      color: priorityColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: Text(
-                      _getPrioritySymbol(widget.task.priority),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: priorityColor,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-
                   // Task title and meta info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Title row
-                        Text(
-                          widget.task.title,
-                          style: TextStyle(
-                            fontSize: AppTheme.fontSizeSm,
-                            fontWeight: FontWeight.w500,
-                            color: isCompleted
-                                ? AppTheme.textHint
-                                : AppTheme.textPrimary,
-                            decoration: isCompleted
-                                ? TextDecoration.lineThrough
-                                : null,
-                            decorationColor: AppTheme.textHint,
+                        // Title row with fixed height to prevent layout shift when text decoration changes
+                        SizedBox(
+                          height: 16,
+                          child: Text(
+                            widget.task.title,
+                            style: TextStyle(
+                              fontSize: AppTheme.fontSizeSm,
+                              fontWeight: FontWeight.w500,
+                              color: isCompleted
+                                  ? AppTheme.textHint
+                                  : AppTheme.textPrimary,
+                              decoration: isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              decorationColor: AppTheme.textHint,
+                              height: 1.2, // Ensure consistent line height
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
 
@@ -410,6 +350,45 @@ class _TaskItemState extends State<TaskItem> {
                 ],
               ),
             ),
+
+                // Subtask hierarchy indicator (connection line) - CustomPaint with L shape
+                // Width is 20px for the L-shape, but vertical line is only 3px wide at left
+                if (isSubtask)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 20,
+                      height: double.infinity,
+                      color: Colors.transparent,
+                      child: CustomPaint(
+                        painter: _SubtaskLinePainter(
+                          color: AppTheme.dividerColor,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Priority indicator - vertical line at the very left (positioned absolutely, last so it overlays on top)
+                if (widget.task.priority == TaskPriority.high || widget.task.priority == TaskPriority.low)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 3,
+                      decoration: BoxDecoration(
+                        color: widget.task.priority == TaskPriority.high
+                            ? const Color(0xFFEF4444) // Red-500 for high
+                            : const Color(0xFF9CA3AF), // Gray-400 for low
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(1),
+                          bottomRight: Radius.circular(1),
+                        ),
+                      ),
+                    ),
+                  ),
           ],
         ),
       ),
@@ -418,7 +397,7 @@ class _TaskItemState extends State<TaskItem> {
         // Subtasks with visual hierarchy and drag-and-drop reordering
         if (hasSubtasks && _isExpanded)
           Container(
-            margin: const EdgeInsets.only(left: 12),
+            margin: const EdgeInsets.only(left: 30),
             decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(
@@ -495,10 +474,13 @@ class _SubtaskLinePainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
 
+    // Draw L-shaped connection line
+    // Vertical line: from (0, 0) to (0, size.height / 2) - at left edge
+    // Horizontal line: from (0, size.height / 2) to (10, size.height / 2) - short line to avoid covering checkbox
     final path = Path()
       ..moveTo(0, 0)
       ..lineTo(0, size.height / 2)
-      ..lineTo(size.width - 4, size.height / 2);
+      ..lineTo(10, size.height / 2);
 
     canvas.drawPath(path, paint);
   }

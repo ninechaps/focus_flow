@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/task.dart';
-import '../../models/enums.dart';
 import '../../providers/task_provider.dart';
 import 'widgets/task_filter_panel.dart';
 import 'widgets/task_list_panel.dart';
@@ -237,16 +236,7 @@ class _ListPageState extends State<ListPage> {
                   final messenger = ScaffoldMessenger.of(context);
 
                   try {
-                    final updatedTask = await provider.toggleTaskStatus(task.id);
-
-                    // Auto-switch to the appropriate tab based on new status/
-                    if (updatedTask != null) {
-                      if (updatedTask.status == TaskStatus.completed) {
-                        provider.setStatusFilter('completed');
-                      } else if (updatedTask.status == TaskStatus.pending) {
-                        provider.setStatusFilter('pending');
-                      }
-                    }
+                    await provider.toggleTaskStatus(task.id);
                   } catch (e) {
                     if (!mounted) return;
 
