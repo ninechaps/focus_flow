@@ -3,6 +3,7 @@ import '../../../theme/app_theme.dart';
 import '../../../models/tag.dart';
 import '../../../models/goal.dart';
 import '../../../models/task.dart';
+import '../../../widgets/context_menu.dart';
 
 /// Left sidebar panel for filtering tasks by time, tags, and goals
 class TaskFilterPanel extends StatelessWidget {
@@ -19,6 +20,10 @@ class TaskFilterPanel extends StatelessWidget {
   final ValueChanged<String?>? onGoalChanged;
   final VoidCallback? onAddTag;
   final VoidCallback? onAddGoal;
+  final Function(Goal)? onEditGoal;
+  final Function(String)? onDeleteGoal;
+  final Function(Tag)? onEditTag;
+  final Function(String)? onDeleteTag;
 
   const TaskFilterPanel({
     super.key,
@@ -33,6 +38,10 @@ class TaskFilterPanel extends StatelessWidget {
     this.onGoalChanged,
     this.onAddTag,
     this.onAddGoal,
+    this.onEditGoal,
+    this.onDeleteGoal,
+    this.onEditTag,
+    this.onDeleteTag,
   });
 
   /// Format count for display, showing "99+" for counts > 99
@@ -206,6 +215,8 @@ class TaskFilterPanel extends StatelessWidget {
                   onTap: () => onGoalChanged?.call(
                     selectedGoalId == goal.id ? null : goal.id,
                   ),
+                  onEdit: () => onEditGoal?.call(goal),
+                  onDelete: () => onDeleteGoal?.call(goal.id),
                 ),
             ],
           ),
@@ -232,6 +243,8 @@ class TaskFilterPanel extends StatelessWidget {
                   onTap: () => onTagChanged?.call(
                     selectedTagId == tag.id ? null : tag.id,
                   ),
+                  onEdit: () => onEditTag?.call(tag),
+                  onDelete: () => onDeleteTag?.call(tag.id),
                 ),
             ],
           ),
@@ -390,11 +403,15 @@ class _GoalFilterItem extends StatefulWidget {
   final Goal goal;
   final bool isSelected;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const _GoalFilterItem({
     required this.goal,
     this.isSelected = false,
     this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -420,6 +437,36 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
+        onSecondaryTapDown: (details) async {
+          // ignore: use_build_context_synchronously
+          final result = await ContextMenu.show<String>(
+            context: context,
+            position: details.globalPosition,
+            groups: [
+              ContextMenuGroup(
+                items: [
+                  ContextMenuItem(
+                    label: 'Edit',
+                    icon: Icons.edit_outlined,
+                    value: 'edit',
+                  ),
+                  ContextMenuItem(
+                    label: 'Delete',
+                    icon: Icons.delete_outline,
+                    value: 'delete',
+                    isDangerous: true,
+                  ),
+                ],
+              ),
+            ],
+          );
+
+          if (result == 'edit') {
+            widget.onEdit?.call();
+          } else if (result == 'delete') {
+            widget.onDelete?.call();
+          }
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
@@ -486,11 +533,15 @@ class _TagFilterItem extends StatefulWidget {
   final Tag tag;
   final bool isSelected;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const _TagFilterItem({
     required this.tag,
     this.isSelected = false,
     this.onTap,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -516,6 +567,36 @@ class _TagFilterItemState extends State<_TagFilterItem> {
       onExit: (_) => setState(() => _isHovered = false),
       child: GestureDetector(
         onTap: widget.onTap,
+        onSecondaryTapDown: (details) async {
+          // ignore: use_build_context_synchronously
+          final result = await ContextMenu.show<String>(
+            context: context,
+            position: details.globalPosition,
+            groups: [
+              ContextMenuGroup(
+                items: [
+                  ContextMenuItem(
+                    label: 'Edit',
+                    icon: Icons.edit_outlined,
+                    value: 'edit',
+                  ),
+                  ContextMenuItem(
+                    label: 'Delete',
+                    icon: Icons.delete_outline,
+                    value: 'delete',
+                    isDangerous: true,
+                  ),
+                ],
+              ),
+            ],
+          );
+
+          if (result == 'edit') {
+            widget.onEdit?.call();
+          } else if (result == 'delete') {
+            widget.onDelete?.call();
+          }
+        },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,

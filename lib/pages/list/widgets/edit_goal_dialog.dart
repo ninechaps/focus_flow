@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import '../../../models/goal.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/date_picker.dart';
 import '../../../widgets/dialog.dart';
 
-/// 添加目标对话框 - 紧凑专业设计版本
-class AddGoalDialog extends StatefulWidget {
-  const AddGoalDialog({super.key});
+/// 编辑目标对话框 - 紧凑专业设计版本
+class EditGoalDialog extends StatefulWidget {
+  final Goal goal;
+
+  const EditGoalDialog({
+    super.key,
+    required this.goal,
+  });
 
   @override
-  State<AddGoalDialog> createState() => _AddGoalDialogState();
+  State<EditGoalDialog> createState() => _EditGoalDialogState();
 }
 
-class _AddGoalDialogState extends State<AddGoalDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  DateTime? _dueDate;
+class _EditGoalDialogState extends State<EditGoalDialog> {
+  late final TextEditingController _nameController;
+  late DateTime _dueDate;
+  late final GlobalKey<FormState> _formKey;
+
+  @override
+  void initState() {
+    super.initState();
+    _formKey = GlobalKey<FormState>();
+    _nameController = TextEditingController(text: widget.goal.name);
+    _dueDate = widget.goal.dueDate;
+  }
 
   @override
   void dispose() {
@@ -25,29 +36,14 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
     super.dispose();
   }
 
-
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      if (_dueDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a due date'),
-            backgroundColor: AppTheme.errorColor,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
-      final now = DateTime.now();
-      final goal = Goal(
-        id: const Uuid().v4(),
+      final updatedGoal = widget.goal.copyWith(
         name: _nameController.text.trim(),
-        dueDate: _dueDate!,
-        createdAt: now,
-        updatedAt: now,
+        dueDate: _dueDate,
+        updatedAt: DateTime.now(),
       );
-      Navigator.of(context).pop(goal);
+      Navigator.of(context).pop(updatedGoal);
     }
   }
 
@@ -62,7 +58,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   @override
   Widget build(BuildContext context) {
     return DialogBox(
-      title: 'Create New Goal',
+      title: 'Edit Goal',
       onClose: () => Navigator.pop(context),
       width: 440,
       content: Form(
@@ -85,14 +81,21 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
                 return null;
               },
             ),
-            const SizedBox(height: 18), // 18px - 合理的字段间距
+            const SizedBox(height: 18),
             DatePicker(
               label: 'Target Due Date',
               helper: 'When do you want to achieve this goal?',
               selectedDate: _dueDate,
               formatDate: _formatDate,
-              onDateChanged: (date) => setState(() => _dueDate = date),
-              onClear: () => setState(() => _dueDate = null),
+              onDateChanged: (date) {
+                if (date != null) {
+                  setState(() => _dueDate = date);
+                }
+              },
+              onClear: () {
+                // Reset to original goal's due date
+                setState(() => _dueDate = widget.goal.dueDate);
+              },
             ),
           ],
         ),
@@ -103,7 +106,7 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(
-          label: 'Create Goal',
+          label: 'Save Goal',
           onPressed: _submit,
           isPrimary: true,
         ),
@@ -112,11 +115,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   }
 }
 
-/// 显示添加目标对话框
-Future<Goal?> showAddGoalDialog(BuildContext context) {
+/// 显示编辑目标对话框
+Future<Goal?> showEditGoalDialog(BuildContext context, Goal goal) {
   return showDialog<Goal>(
     context: context,
     barrierDismissible: false,
-    builder: (context) => const AddGoalDialog(),
+    builder: (context) => EditGoalDialog(goal: goal),
   );
 }

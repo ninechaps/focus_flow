@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
 import '../../../models/tag.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/dialog.dart';
 
-/// 添加标签对话框 - 紧凑专业设计版本
-class AddTagDialog extends StatefulWidget {
-  const AddTagDialog({super.key});
+/// 编辑标签对话框 - 紧凑专业设计版本
+class EditTagDialog extends StatefulWidget {
+  final Tag tag;
+
+  const EditTagDialog({
+    super.key,
+    required this.tag,
+  });
 
   @override
-  State<AddTagDialog> createState() => _AddTagDialogState();
+  State<EditTagDialog> createState() => _EditTagDialogState();
 }
 
-class _AddTagDialogState extends State<AddTagDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  String _selectedColor = '6366F1'; // Default purple color
+class _EditTagDialogState extends State<EditTagDialog> {
+  late final TextEditingController _nameController;
+  late String _selectedColor;
+  late final GlobalKey<FormState> _formKey;
 
   // Predefined color options
   static const List<String> _colorOptions = [
@@ -33,6 +37,14 @@ class _AddTagDialogState extends State<AddTagDialog> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _formKey = GlobalKey<FormState>();
+    _nameController = TextEditingController(text: widget.tag.name);
+    _selectedColor = widget.tag.color;
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
@@ -45,22 +57,19 @@ class _AddTagDialogState extends State<AddTagDialog> {
 
   void _submit() {
     if (_formKey.currentState!.validate()) {
-      final now = DateTime.now();
-      final tag = Tag(
-        id: const Uuid().v4(),
+      final updatedTag = widget.tag.copyWith(
         name: _nameController.text.trim(),
         color: _selectedColor,
-        createdAt: now,
-        updatedAt: now,
+        updatedAt: DateTime.now(),
       );
-      Navigator.of(context).pop(tag);
+      Navigator.of(context).pop(updatedTag);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return DialogBox(
-      title: 'Create New Tag',
+      title: 'Edit Tag',
       onClose: () => Navigator.pop(context),
       width: 420,
       content: Form(
@@ -85,7 +94,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
                 return null;
               },
             ),
-            const SizedBox(height: 18), // 18px
+            const SizedBox(height: 18),
 
             // Color Selection
             Column(
@@ -99,7 +108,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
                     color: AppTheme.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 8), // 8px
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -160,7 +169,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(
-          label: 'Create Tag',
+          label: 'Save Tag',
           onPressed: _submit,
           isPrimary: true,
         ),
@@ -169,10 +178,10 @@ class _AddTagDialogState extends State<AddTagDialog> {
   }
 }
 
-/// Show add tag dialog and return the created tag
-Future<Tag?> showAddTagDialog(BuildContext context) {
+/// 显示编辑标签对话框
+Future<Tag?> showEditTagDialog(BuildContext context, Tag tag) {
   return showDialog<Tag>(
     context: context,
-    builder: (context) => const AddTagDialog(),
+    builder: (context) => EditTagDialog(tag: tag),
   );
 }

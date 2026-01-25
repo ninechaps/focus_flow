@@ -5,6 +5,7 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/layout/window_controls.dart';
+import '../../widgets/app_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -281,20 +282,13 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: AppTheme.spacingXl),
 
                   // Username field
-                  Text(
-                    'Username',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: AppTheme.spacingXs),
-                  TextFormField(
+                  AppTextField(
+                    label: 'Username',
+                    hint: 'Enter your username',
                     controller: _usernameController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your username',
-                      prefixIcon: Icon(Icons.person_outline, size: AppTheme.iconSizeMd),
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textInputAction: TextInputAction.next,
-                    onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+                    prefixIcon: const Icon(Icons.person_outline, size: AppTheme.iconSizeMd),
+                    keyboardType: TextInputType.text,
+                    onFieldSubmitted: () => FocusScope.of(context).nextFocus(),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return '请输入用户名';
@@ -306,21 +300,14 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: AppTheme.spacingMd),
 
                   // Password field
-                  Text(
-                    'Password',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
-                  const SizedBox(height: AppTheme.spacingXs),
-                  TextFormField(
+                  AppTextField(
+                    label: 'Password',
+                    hint: 'Enter your password',
                     controller: _passwordController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your password',
-                      prefixIcon: Icon(Icons.lock_outline, size: AppTheme.iconSizeMd),
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    prefixIcon: const Icon(Icons.lock_outline, size: AppTheme.iconSizeMd),
+                    keyboardType: TextInputType.text,
                     obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _handleLogin(),
+                    onFieldSubmitted: _handleLogin,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return '请输入密码';
