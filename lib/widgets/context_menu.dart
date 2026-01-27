@@ -314,7 +314,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
   Color _getTextColor(bool isHovered) {
     if (!widget.item.enabled) return AppTheme.textHint;
     if (widget.item.isDangerous) {
-      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withOpacity(0.8);
+      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withValues(alpha: 0.8);
     }
     return isHovered ? AppTheme.primaryColor : AppTheme.textPrimary;
   }
@@ -322,7 +322,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
   Color _getIconColor(bool isHovered) {
     if (!widget.item.enabled) return AppTheme.textHint;
     if (widget.item.isDangerous) {
-      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withOpacity(0.8);
+      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withValues(alpha: 0.8);
     }
     return isHovered ? AppTheme.primaryColor : AppTheme.textSecondary;
   }

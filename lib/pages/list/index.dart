@@ -45,6 +45,7 @@ class _ListPageState extends State<ListPage> {
 
   Future<void> _handleAddSubtask(Task parentTask) async {
     final provider = context.read<TaskProvider>();
+    final messenger = ScaffoldMessenger.of(context);
     final task = await showAddTaskDialog(
       context,
       availableTags: provider.tags,
@@ -56,7 +57,7 @@ class _ListPageState extends State<ListPage> {
       try {
         await provider.addTask(task);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Subtask added successfully'),
               backgroundColor: Colors.green,
@@ -65,7 +66,7 @@ class _ListPageState extends State<ListPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Text('Failed to add subtask: $e'),
               backgroundColor: Colors.red,
@@ -78,6 +79,7 @@ class _ListPageState extends State<ListPage> {
 
   Future<void> _handleAddTask() async {
     final provider = context.read<TaskProvider>();
+    final messenger = ScaffoldMessenger.of(context);
     final task = await showAddTaskDialog(
       context,
       availableTags: provider.tags,
@@ -89,7 +91,7 @@ class _ListPageState extends State<ListPage> {
       try {
         await provider.addTask(task);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Task added successfully'),
               backgroundColor: Colors.green,
@@ -98,7 +100,7 @@ class _ListPageState extends State<ListPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             SnackBar(
               content: Text('Failed to add task: $e'),
               backgroundColor: Colors.red,
@@ -172,12 +174,13 @@ class _ListPageState extends State<ListPage> {
                 onAddTask: _handleAddTask,
                 onFocus: _handleFocus,
                 onReorder: (groupKey, oldIndex, newIndex, groupTasks) async {
+                  final messenger = ScaffoldMessenger.of(context);
                   try {
                     await provider.reorderTasks(groupKey, oldIndex, newIndex, groupTasks);
                   } catch (e) {
                     if (!mounted) return;
 
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(
                         content: Text('Failed to reorder tasks: $e'),
                         backgroundColor: Colors.red,
@@ -186,13 +189,14 @@ class _ListPageState extends State<ListPage> {
                   }
                 },
                 onSubtasksReorder: (parentTask, oldIndex, newIndex) async {
+                  final messenger = ScaffoldMessenger.of(context);
                   try {
                     final subtasks = provider.subtasksMap[parentTask.id] ?? [];
                     await provider.reorderTasks('subtasks_${parentTask.id}', oldIndex, newIndex, subtasks);
                   } catch (e) {
                     if (!mounted) return;
 
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    messenger.showSnackBar(
                       SnackBar(
                         content: Text('Failed to reorder subtasks: $e'),
                         backgroundColor: Colors.red,

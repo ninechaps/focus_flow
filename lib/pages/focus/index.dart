@@ -414,7 +414,7 @@ class _ModeButton extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : (isEnabled ? Colors.transparent : AppTheme.surfaceColor.withOpacity(0.5)),
+            color: isSelected ? AppTheme.primaryColor : (isEnabled ? Colors.transparent : AppTheme.surfaceColor.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             border: isEnabled ? null : Border.all(color: AppTheme.dividerColor),
           ),
@@ -857,12 +857,12 @@ class _DurationChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected 
                 ? AppTheme.primaryColor 
-                : (isEnabled ? AppTheme.surfaceColor : AppTheme.surfaceColor.withOpacity(0.5)),
+                : (isEnabled ? AppTheme.surfaceColor : AppTheme.surfaceColor.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             border: Border.all(
               color: isSelected 
                   ? AppTheme.primaryColor 
-                  : (isEnabled ? AppTheme.dividerColor : AppTheme.dividerColor.withOpacity(0.5)),
+                  : (isEnabled ? AppTheme.dividerColor : AppTheme.dividerColor.withValues(alpha: 0.5)),
               width: 1,
             ),
           ),

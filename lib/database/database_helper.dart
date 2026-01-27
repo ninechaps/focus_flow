@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -38,7 +39,7 @@ class DatabaseHelper {
     final String path = join(documentsDirectory.path, DatabaseConfig.databaseName);
 
     if (DatabaseConfig.debugMode) {
-      print('Database path: $path');
+      debugPrint('Database path: $path');
     }
 
     return await openDatabase(
@@ -126,14 +127,14 @@ class DatabaseHelper {
     ''');
 
     if (DatabaseConfig.debugMode) {
-      print('Database tables created successfully');
+      debugPrint('Database tables created successfully');
     }
   }
 
   /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (DatabaseConfig.debugMode) {
-      print('Upgrading database from version $oldVersion to $newVersion');
+      debugPrint('Upgrading database from version $oldVersion to $newVersion');
     }
 
     // Migration to v3: Replace categories with goals, restructure tasks
@@ -149,7 +150,7 @@ class DatabaseHelper {
       await _onCreate(db, newVersion);
 
       if (DatabaseConfig.debugMode) {
-        print('Database reset for v3 migration - categories replaced with goals');
+        debugPrint('Database reset for v3 migration - categories replaced with goals');
       }
     }
 
@@ -161,7 +162,7 @@ class DatabaseHelper {
       ''');
 
       if (DatabaseConfig.debugMode) {
-        print('Database upgraded to v4 - added focus_duration column');
+        debugPrint('Database upgraded to v4 - added focus_duration column');
       }
     }
 
@@ -173,7 +174,7 @@ class DatabaseHelper {
       ''');
 
       if (DatabaseConfig.debugMode) {
-        print('Database upgraded to v5 - added completed_at column');
+        debugPrint('Database upgraded to v5 - added completed_at column');
       }
     }
 
@@ -185,7 +186,7 @@ class DatabaseHelper {
       ''');
 
       if (DatabaseConfig.debugMode) {
-        print('Database upgraded to v6 - added sort_order column');
+        debugPrint('Database upgraded to v6 - added sort_order column');
       }
     }
   }
@@ -202,7 +203,7 @@ class DatabaseHelper {
     await db.delete(DatabaseConfig.tableTag);
 
     if (DatabaseConfig.debugMode) {
-      print('All data cleared from database');
+      debugPrint('All data cleared from database');
     }
   }
 
@@ -226,7 +227,7 @@ class DatabaseHelper {
     if (await file.exists()) {
       await file.delete();
       if (DatabaseConfig.debugMode) {
-        print('Database file deleted: $path');
+        debugPrint('Database file deleted: $path');
       }
     }
 

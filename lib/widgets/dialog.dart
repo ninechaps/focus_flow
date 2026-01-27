@@ -14,7 +14,6 @@ class _DialogColors {
   static const Color primary = Color(0xFF6366F1); // Indigo-500
   static const Color textPrimary = AppTheme.textPrimary;
   static const Color textSecondary = AppTheme.textSecondary;
-  static const Color textHint = AppTheme.textHint;
   static const Color border = AppTheme.dividerColor;
   static const Color borderLight = Color(0xFFF1F5F9);
   static const Color error = AppTheme.errorColor;
@@ -22,7 +21,6 @@ class _DialogColors {
 
 // ===== 间距系统（遵循项目标准）=====
 class _DialogSpacing {
-  static const double sm = AppTheme.spacingSm; // 6.0
   static const double md = AppTheme.spacingMd; // 10.0
   static const double lg = AppTheme.spacingLg; // 14.0
 }
@@ -39,34 +37,6 @@ class _DialogTypography {
     fontSize: 16, // 16px - 对话框标题（适中）
     fontWeight: FontWeight.w600,
     color: _DialogColors.textPrimary,
-    height: 1.3,
-  );
-
-  static const TextStyle labelStyle = TextStyle(
-    fontSize: 12.5, // 12.5px - 字段标签
-    fontWeight: FontWeight.w500,
-    color: _DialogColors.textSecondary,
-    height: 1.2,
-  );
-
-  static const TextStyle inputStyle = TextStyle(
-    fontSize: 13.5, // 13.5px - 输入框内容
-    fontWeight: FontWeight.normal,
-    color: _DialogColors.textPrimary,
-    height: 1.4,
-  );
-
-  static const TextStyle hintStyle = TextStyle(
-    fontSize: 13.5, // 13.5px - 提示文本
-    fontWeight: FontWeight.normal,
-    color: _DialogColors.textHint,
-    height: 1.4,
-  );
-
-  static const TextStyle helperStyle = TextStyle(
-    fontSize: 12, // 12px - 辅助文本
-    fontWeight: FontWeight.normal,
-    color: _DialogColors.textSecondary,
     height: 1.3,
   );
 
