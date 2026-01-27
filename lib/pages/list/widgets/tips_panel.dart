@@ -345,16 +345,17 @@ class TipsPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              // Focus button
-              Expanded(
-                child: _DetailButton(
-                  label: '▶ 开始专注',
-                  isPrimary: true,
-                  onTap: task.status != TaskStatus.completed && onFocus != null
-                      ? () => onFocus!(task)
-                      : null,
+              // Focus button - only for subtasks (tasks with parentTaskId != null)
+              if (task.parentTaskId != null) // Only show focus button for subtasks
+                Expanded(
+                  child: _DetailButton(
+                    label: '▶ 开始专注',
+                    isPrimary: true,
+                    onTap: task.status != TaskStatus.completed && onFocus != null
+                        ? () => onFocus!(task)
+                        : null,
+                  ),
                 ),
-              ),
             ],
           ),
         ),

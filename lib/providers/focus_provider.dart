@@ -155,7 +155,7 @@ class FocusProvider extends ChangeNotifier {
 
   /// Toggle between countdown and count-up modes
   void toggleTimerMode() {
-    if (_state == FocusState.running) return; // Can't change mode while running
+    // Allow changing mode even while running - this will affect the display but not the timer
     _timerMode = _timerMode == TimerMode.countdown
         ? TimerMode.countUp
         : TimerMode.countdown;
@@ -164,7 +164,7 @@ class FocusProvider extends ChangeNotifier {
 
   /// Set timer mode directly
   void setTimerMode(TimerMode mode) {
-    if (_state == FocusState.running) return;
+    // Allow changing mode even while running - this will affect the display but not the timer
     _timerMode = mode;
     notifyListeners();
   }
@@ -236,9 +236,8 @@ class FocusProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Change target duration (only when not running)
+  /// Change target duration (even when running - affects countdown calculations)
   void setTargetMinutes(int minutes) {
-    if (_state == FocusState.running) return;
     _targetMinutes = minutes.clamp(1, 120);
     notifyListeners();
   }

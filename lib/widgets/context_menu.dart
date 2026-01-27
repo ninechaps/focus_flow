@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 /// ============================================================================
-/// ContextMenu - 右键菜单组件
+/// ContextMenu - 右键菜单组件 (优化版)
 /// ============================================================================
 
 /// 菜单项数据模型
@@ -88,7 +88,6 @@ class _MenuContainerState<T> extends State<_MenuContainer<T>> {
     _menuKey = GlobalKey();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -137,37 +136,56 @@ class _MenuItemsPanelState<T> extends State<_MenuItemsPanel<T>> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: Colors.transparent,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        side: BorderSide(
+          color: AppTheme.dividerColor,
+          width: 0.5,
+        ),
+      ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.2), width: 1),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (int groupIndex = 0; groupIndex < widget.groups.length; groupIndex++) ...{
-              if (groupIndex > 0)
-                Container(
-                  height: 1,
-                  color: Colors.grey.withValues(alpha: 0.1),
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                ),
-              for (final item in widget.groups[groupIndex].items)
-                _MenuItem<T>(
-                  item: item,
-                  onTap: item.enabled
-                      ? () {
-                          widget.onSelected(item.value);
-                        }
-                      : null,
-                ),
-            },
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
+          border: Border.all(
+            color: AppTheme.dividerColor,
+            width: 0.5,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int groupIndex = 0; groupIndex < widget.groups.length; groupIndex++) ...{
+                if (groupIndex > 0)
+                  Container(
+                    height: 0.5,
+                    color: AppTheme.dividerColor,
+                    margin: const EdgeInsets.symmetric(vertical: 2),
+                  ),
+                for (final item in widget.groups[groupIndex].items)
+                  _MenuItem<T>(
+                    item: item,
+                    onTap: item.enabled
+                        ? () {
+                            widget.onSelected(item.value);
+                          }
+                        : null,
+                  ),
+              },
+            ],
+          ),
         ),
       ),
     );
@@ -188,61 +206,103 @@ class _MenuItem<T> extends StatefulWidget {
   State<_MenuItem<T>> createState() => _MenuItemState<T>();
 }
 
-class _MenuItemState<T> extends State<_MenuItem<T>> {
+class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderStateMixin {
   bool _isHovered = false;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.98).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: !widget.item.enabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          color: _getBackgroundColor(_isHovered),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              if (widget.item.icon != null) ...{
-                Icon(
-                  widget.item.icon,
-                  size: 16,
-                  color: _getIconColor(_isHovered),
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _isHovered ? _scaleAnimation.value : 1.0,
+          child: MouseRegion(
+            cursor: !widget.item.enabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+            onEnter: (_) {
+              setState(() => _isHovered = true);
+              _animationController.forward();
+            },
+            onExit: (_) {
+              setState(() => _isHovered = false);
+              _animationController.reverse();
+            },
+            child: GestureDetector(
+              onTap: widget.onTap,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: _getBackgroundColor(_isHovered),
+                  borderRadius: BorderRadius.zero,
                 ),
-                const SizedBox(width: 10),
-              },
-              Text(
-                widget.item.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: _getTextColor(_isHovered),
-                  fontWeight: FontWeight.w500,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    if (widget.item.icon != null) ...{
+                      Icon(
+                        widget.item.icon,
+                        size: AppTheme.iconSizeMd,
+                        color: _getIconColor(_isHovered),
+                      ),
+                      const SizedBox(width: 10),
+                    },
+                    Expanded(
+                      child: Text(
+                        widget.item.label,
+                        style: TextStyle(
+                          fontSize: AppTheme.fontSizeSm,
+                          color: _getTextColor(_isHovered),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (widget.item.shortcut != null || widget.item.showArrow) ...{
+                      const SizedBox(width: 12),
+                      if (widget.item.shortcut != null)
+                        Text(
+                          widget.item.shortcut!,
+                          style: TextStyle(
+                            fontSize: AppTheme.fontSizeXs,
+                            color: AppTheme.textHint,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        )
+                      else if (widget.item.showArrow)
+                        Icon(
+                          Icons.chevron_right,
+                          size: AppTheme.iconSizeMd,
+                          color: AppTheme.textHint,
+                        ),
+                    },
+                  ],
                 ),
               ),
-              if (widget.item.shortcut != null || widget.item.showArrow) ...{
-                const SizedBox(width: 16),
-                if (widget.item.shortcut != null)
-                  Text(
-                    widget.item.shortcut!,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppTheme.textHint,
-                      fontWeight: FontWeight.normal,
-                    ),
-                  )
-                else if (widget.item.showArrow)
-                  Icon(
-                    Icons.chevron_right,
-                    size: 16,
-                    color: AppTheme.textHint,
-                  ),
-              },
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -254,7 +314,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> {
   Color _getTextColor(bool isHovered) {
     if (!widget.item.enabled) return AppTheme.textHint;
     if (widget.item.isDangerous) {
-      return isHovered ? const Color(0xFFDC2626) : const Color(0xFFEF4444);
+      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withOpacity(0.8);
     }
     return isHovered ? AppTheme.primaryColor : AppTheme.textPrimary;
   }
@@ -262,7 +322,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> {
   Color _getIconColor(bool isHovered) {
     if (!widget.item.enabled) return AppTheme.textHint;
     if (widget.item.isDangerous) {
-      return isHovered ? const Color(0xFFDC2626) : const Color(0xFFEF4444);
+      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withOpacity(0.8);
     }
     return isHovered ? AppTheme.primaryColor : AppTheme.textSecondary;
   }

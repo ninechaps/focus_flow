@@ -125,7 +125,7 @@ class _TaskListHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 36, 24, 12),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),  // 减小顶部边距从36到16
       child: Row(
         children: [
           // Search bar - white background, thin border, focus ring

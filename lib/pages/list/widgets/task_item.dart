@@ -343,7 +343,7 @@ class _TaskItemState extends State<TaskItem> {
                   ),
 
                   // Action buttons - visible on hover
-                  // Fixed height to prevent layout shift when task completes
+                  // Fixed height only for subtasks (36) vs parent tasks (64 with add button)
                   SizedBox(
                     width: isTopLevel ? 64 : 36,
                     height: 28,
@@ -363,8 +363,8 @@ class _TaskItemState extends State<TaskItem> {
                                 onTap: widget.onAddSubtask,
                               ),
 
-                            // Focus button - play icon in purple circle
-                            if (!hasSubtasks && !isCompleted)
+                            // Focus button - play icon in purple circle (only for subtasks)
+                            if (!isTopLevel && !isCompleted)
                               _PlayButton(
                                 onTap: () => widget.onTaskFocus?.call(widget.task),
                               ),

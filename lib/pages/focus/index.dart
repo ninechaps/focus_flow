@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +28,14 @@ class _FocusPageState extends State<FocusPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeFocus();
+      // Immediately start the timer after initialization
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          final focusProvider = context.read<FocusProvider>();
+          // Start the timer immediately
+          focusProvider.start();
+        }
+      });
     });
   }
 
@@ -87,12 +96,11 @@ class _FocusPageState extends State<FocusPage> {
 
                 const SizedBox(height: AppTheme.spacingLg),
 
-                // Timer mode selector
-                if (!focusProvider.isActive && focusProvider.state != FocusState.completed)
-                  _TimerModeSelector(
-                    currentMode: focusProvider.timerMode,
-                    onModeChanged: focusProvider.setTimerMode,
-                  ),
+                // Timer mode selector - always visible but disabled when running
+                _TimerModeSelector(
+                  currentMode: focusProvider.timerMode,
+                  onModeChanged: focusProvider.setTimerMode,
+                ),
 
                 const SizedBox(height: AppTheme.spacingSm),
 
@@ -109,14 +117,16 @@ class _FocusPageState extends State<FocusPage> {
                   ),
                 ),
 
-                // Duration selector (only for countdown mode when not running)
-                if (!focusProvider.isActive &&
-                    focusProvider.state != FocusState.completed &&
-                    focusProvider.isCountdown)
-                  _DurationSelector(
-                    selectedMinutes: focusProvider.targetMinutes,
-                    onChanged: focusProvider.setTargetMinutes,
-                  ),
+                // Duration selector placeholder (for consistent layout between modes)
+                SizedBox(
+                  height: 52, // Fixed height for both modes
+                  child: focusProvider.isCountdown
+                    ? _DurationSelector(
+                        selectedMinutes: focusProvider.targetMinutes,
+                        onChanged: focusProvider.setTargetMinutes,
+                      )
+                    : const Offstage(), // Hidden but still takes up space
+                ),
 
                 const SizedBox(height: AppTheme.spacingLg),
 
@@ -346,31 +356,35 @@ class _TimerModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        border: Border.all(color: AppTheme.dividerColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ModeButton(
-            icon: Icons.hourglass_bottom,
-            label: 'Countdown',
-            isSelected: currentMode == TimerMode.countdown,
-            onTap: () => onModeChanged(TimerMode.countdown),
+    return Consumer<FocusProvider>(
+      builder: (context, focusProvider, child) {
+        return Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            border: Border.all(color: AppTheme.dividerColor),
           ),
-          const SizedBox(width: 4),
-          _ModeButton(
-            icon: Icons.timer,
-            label: 'Stopwatch',
-            isSelected: currentMode == TimerMode.countUp,
-            onTap: () => onModeChanged(TimerMode.countUp),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ModeButton(
+                icon: Icons.hourglass_bottom,
+                label: 'Countdown',
+                isSelected: currentMode == TimerMode.countdown,
+                onTap: () => onModeChanged(TimerMode.countdown),
+              ),
+              const SizedBox(width: 4),
+              _ModeButton(
+                icon: Icons.timer,
+                label: 'Stopwatch',
+                isSelected: currentMode == TimerMode.countUp,
+                onTap: () => onModeChanged(TimerMode.countUp),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -380,7 +394,7 @@ class _ModeButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ModeButton({
     required this.icon,
@@ -391,33 +405,38 @@ class _ModeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isSelected ? Colors.white : AppTheme.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected ? Colors.white : AppTheme.textSecondary,
+    final isEnabled = onTap != null;
+    return MouseRegion(
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: isEnabled ? onTap : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppTheme.primaryColor : (isEnabled ? Colors.transparent : AppTheme.surfaceColor.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: isEnabled ? null : Border.all(color: AppTheme.dividerColor),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: AppTheme.fontSizeSm,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -490,7 +509,7 @@ class _TimerDisplay extends StatelessWidget {
               Text(
                 isCompleted ? 'Complete!' : formattedTime,
                 style: TextStyle(
-                  fontSize: isCompleted ? AppTheme.fontSizeXl : 48,
+                  fontSize: isCompleted ? AppTheme.fontSizeXl : AppTheme.fontSizeDisplay,
                   fontWeight: FontWeight.w300,
                   color: AppTheme.textPrimary,
                   letterSpacing: 2,
@@ -507,7 +526,7 @@ class _TimerDisplay extends StatelessWidget {
                   child: Text(
                     isRunning
                         ? (isCountUp ? 'Tracking' : 'Focusing')
-                        : (state == FocusState.paused ? 'Paused' : 'Ready'),
+                        : (state == FocusState.paused ? 'Paused' : 'Tap Start to Begin'),
                     style: TextStyle(
                       fontSize: AppTheme.fontSizeSm,
                       fontWeight: FontWeight.w500,
@@ -608,9 +627,11 @@ class _TimerControls extends StatelessWidget {
           _ControlButton(
             icon: Icons.play_arrow,
             label: 'Start',
-            onPressed: onStart,
+            onPressed: () {
+              onStart();
+            },
             isPrimary: true,
-            size: 64,
+            size: 72,
           ),
 
         if (state == FocusState.running) ...[
@@ -619,7 +640,7 @@ class _TimerControls extends StatelessWidget {
             label: 'Pause',
             onPressed: onPause,
             isPrimary: true,
-            size: 64,
+            size: 72,
           ),
           const SizedBox(width: AppTheme.spacingLg),
           if (isCountUp)
@@ -628,6 +649,7 @@ class _TimerControls extends StatelessWidget {
               label: 'Finish',
               onPressed: onFinish,
               isPrimary: false,
+              size: 60,
             )
           else
             _ControlButton(
@@ -635,6 +657,7 @@ class _TimerControls extends StatelessWidget {
               label: 'Stop',
               onPressed: onStop,
               isPrimary: false,
+              size: 60,
             ),
         ],
 
@@ -644,7 +667,7 @@ class _TimerControls extends StatelessWidget {
             label: 'Resume',
             onPressed: onResume,
             isPrimary: true,
-            size: 64,
+            size: 72,
           ),
           const SizedBox(width: AppTheme.spacingLg),
           if (isCountUp)
@@ -653,6 +676,7 @@ class _TimerControls extends StatelessWidget {
               label: 'Finish',
               onPressed: onFinish,
               isPrimary: false,
+              size: 60,
             )
           else
             _ControlButton(
@@ -660,6 +684,7 @@ class _TimerControls extends StatelessWidget {
               label: 'Stop',
               onPressed: onStop,
               isPrimary: false,
+              size: 60,
             ),
         ],
 
@@ -669,7 +694,7 @@ class _TimerControls extends StatelessWidget {
             label: 'Again',
             onPressed: onNextSession,
             isPrimary: true,
-            size: 64,
+            size: 72,
           ),
           const SizedBox(width: AppTheme.spacingLg),
           _ControlButton(
@@ -677,6 +702,7 @@ class _TimerControls extends StatelessWidget {
             label: 'Done',
             onPressed: onStop,
             isPrimary: false,
+            size: 60,
           ),
         ],
       ],
@@ -697,7 +723,7 @@ class _ControlButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     required this.isPrimary,
-    this.size = 52,
+    this.size = 60,
   });
 
   @override
@@ -705,31 +731,39 @@ class _ControlButton extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: isPrimary ? AppTheme.primaryColor : AppTheme.surfaceColor,
-            shape: BoxShape.circle,
-            border: isPrimary
-                ? null
-                : Border.all(color: AppTheme.dividerColor, width: 1),
-            boxShadow: isPrimary
-                ? [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: IconButton(
-            onPressed: onPressed,
-            icon: Icon(
-              icon,
-              color: isPrimary ? Colors.white : AppTheme.textSecondary,
-              size: size * 0.45,
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: isPrimary ? AppTheme.primaryColor : AppTheme.surfaceColor,
+              shape: BoxShape.circle,
+              border: isPrimary
+                  ? null
+                  : Border.all(color: AppTheme.dividerColor, width: 1),
+              boxShadow: isPrimary
+                  ? [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onPressed,
+                borderRadius: BorderRadius.circular(size / 2),
+                child: Icon(
+                  icon,
+                  color: isPrimary ? Colors.white : AppTheme.textSecondary,
+                  size: size * 0.4,
+                ),
+              ),
             ),
           ),
         ),
@@ -761,35 +795,39 @@ class _DurationSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingMd,
-        vertical: AppTheme.spacingSm,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.schedule,
-            size: 16,
-            color: AppTheme.textSecondary,
+    return Consumer<FocusProvider>(
+      builder: (context, focusProvider, child) {
+        return Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTheme.spacingMd,
+            vertical: AppTheme.spacingSm,
           ),
-          const SizedBox(width: AppTheme.spacingSm),
-          for (final minutes in _presets) ...[
-            _DurationChip(
-              minutes: minutes,
-              isSelected: selectedMinutes == minutes,
-              onTap: () => onChanged(minutes),
-            ),
-            if (minutes != _presets.last) const SizedBox(width: 6),
-          ],
-        ],
-      ),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            border: Border.all(color: AppTheme.dividerColor),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.schedule,
+                size: 16,
+                color: AppTheme.textSecondary,
+              ),
+              const SizedBox(width: AppTheme.spacingSm),
+              for (final minutes in _presets) ...[
+                _DurationChip(
+                  minutes: minutes,
+                  isSelected: selectedMinutes == minutes,
+                  onTap: () => onChanged(minutes),
+                ),
+                if (minutes != _presets.last) const SizedBox(width: 6),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -798,7 +836,7 @@ class _DurationSelector extends StatelessWidget {
 class _DurationChip extends StatelessWidget {
   final int minutes;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _DurationChip({
     required this.minutes,
@@ -808,24 +846,44 @@ class _DurationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-          border: isSelected
-              ? null
-              : Border.all(color: AppTheme.dividerColor, width: 1),
-        ),
-        child: Text(
-          '$minutes min',
-          style: TextStyle(
-            fontSize: AppTheme.fontSizeSm,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? Colors.white : AppTheme.textSecondary,
+    final isEnabled = onTap != null;
+    return MouseRegion(
+      cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: isEnabled ? onTap : null,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? AppTheme.primaryColor 
+                : (isEnabled ? AppTheme.surfaceColor : AppTheme.surfaceColor.withOpacity(0.5)),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+            border: Border.all(
+              color: isSelected 
+                  ? AppTheme.primaryColor 
+                  : (isEnabled ? AppTheme.dividerColor : AppTheme.dividerColor.withOpacity(0.5)),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.access_time,
+                size: 14,
+                color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '$minutes min',
+                style: TextStyle(
+                  fontSize: AppTheme.fontSizeSm,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -854,8 +912,8 @@ class _SessionInfo extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXl),
       padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingLg,
-        vertical: AppTheme.spacingMd,
+        horizontal: AppTheme.spacingMd,
+        vertical: AppTheme.spacingSm,
       ),
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
@@ -872,7 +930,7 @@ class _SessionInfo extends StatelessWidget {
           ),
           Container(
             width: 1,
-            height: 28,
+            height: 20,
             color: AppTheme.dividerColor,
           ),
           _InfoItem(
@@ -882,7 +940,7 @@ class _SessionInfo extends StatelessWidget {
           ),
           Container(
             width: 1,
-            height: 28,
+            height: 20,
             color: AppTheme.dividerColor,
           ),
           _InfoItem(
@@ -913,8 +971,8 @@ class _InfoItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: AppTheme.primaryColor.withValues(alpha: 0.7)),
-        const SizedBox(width: 6),
+        Icon(icon, size: 14, color: AppTheme.primaryColor),
+        const SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
