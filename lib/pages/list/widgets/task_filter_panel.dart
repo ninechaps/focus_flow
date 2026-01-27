@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
+import '../../../models/enums.dart';
 import '../../../models/tag.dart';
 import '../../../models/goal.dart';
 import '../../../models/task.dart';
@@ -50,7 +51,7 @@ class TaskFilterPanel extends StatelessWidget {
   }
 
   /// Calculate task counts by creation date for each time filter
-  /// Logic: If a task has subtasks, count only subtasks. If no subtasks, count the task itself.
+  /// Only counts incomplete (non-completed) parent tasks (top-level)
   Map<String, int> _calculateCounts() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -61,20 +62,15 @@ class TaskFilterPanel extends StatelessWidget {
     int earlierCount = 0;
     int allCount = 0;
 
-    // First, identify which parent tasks have subtasks
-    final Set<String> parentTaskIds = {};
-    for (final task in tasks) {
-      if (task.parentTaskId != null) {
-        parentTaskIds.add(task.parentTaskId!);
-      }
-    }
+    // Only count parent tasks (parentTaskId == null) that are not completed
+    final parentTasks = tasks.where((t) =>
+        t.parentTaskId == null && t.status != TaskStatus.completed);
 
-    // Helper to count a task based on its creation date
-    void countTask(DateTime createdAt) {
+    for (final task in parentTasks) {
       final createdDate = DateTime(
-        createdAt.year,
-        createdAt.month,
-        createdAt.day,
+        task.createdAt.year,
+        task.createdAt.month,
+        task.createdAt.day,
       );
 
       allCount++;
@@ -85,8 +81,8 @@ class TaskFilterPanel extends StatelessWidget {
       }
 
       // This week: created within the past 7 days (including today)
-      if (createdDate.isAfter(today.subtract(const Duration(days: 7))) ||
-          createdDate == today.subtract(const Duration(days: 7))) {
+      final weekStart = today.subtract(const Duration(days: 6));
+      if (!createdDate.isBefore(weekStart)) {
         weekCount++;
       }
 
@@ -98,18 +94,6 @@ class TaskFilterPanel extends StatelessWidget {
       // Earlier: created before this month
       if (createdDate.isBefore(DateTime(today.year, today.month, 1))) {
         earlierCount++;
-      }
-    }
-
-    for (final task in tasks) {
-      if (task.parentTaskId != null) {
-        // This is a subtask - always count it
-        countTask(task.createdAt);
-      } else {
-        // This is a top-level task - only count if it has no subtasks
-        if (!parentTaskIds.contains(task.id)) {
-          countTask(task.createdAt);
-        }
       }
     }
 

@@ -102,33 +102,49 @@ class TaskProvider extends ChangeNotifier {
       }).toList();
     }
 
-    // Filter by time based on createdAt (date-only comparisons)
+    // Filter by time (date-only comparisons)
+    // For completed tasks, use completedAt; for others, use createdAt
     if (_selectedTimeFilter != null && _selectedTimeFilter != 'all') {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
 
       filtered = filtered.where((t) {
-        final createdDate = DateTime(
-          t.createdAt.year,
-          t.createdAt.month,
-          t.createdAt.day,
+        // Use completedAt for completed tasks, createdAt for others
+        final DateTime referenceDateTime;
+        if (t.status == TaskStatus.completed && t.completedAt != null) {
+          referenceDateTime = t.completedAt!;
+        } else {
+          referenceDateTime = t.createdAt;
+        }
+        final referenceDate = DateTime(
+          referenceDateTime.year,
+          referenceDateTime.month,
+          referenceDateTime.day,
         );
 
         switch (_selectedTimeFilter) {
           case 'today':
-            // Created today
-            return createdDate == today;
+            // All unfinished tasks + completed today
+            if (t.status == TaskStatus.pending || t.status == TaskStatus.inProgress) {
+              return true;
+            }
+            return referenceDate == today;
           case 'week':
-            // Created within the past 7 days (including today)
+            // All unfinished tasks + completed within past 7 days
+            if (t.status == TaskStatus.pending || t.status == TaskStatus.inProgress) {
+              return true;
+            }
             final weekStart = today.subtract(const Duration(days: 6));
-            return createdDate.isAfter(weekStart.subtract(const Duration(days: 1))) &&
-                createdDate.isBefore(today.add(const Duration(days: 1)));
+            return !referenceDate.isBefore(weekStart);
           case 'month':
-            // Created in the current month
-            return createdDate.year == today.year && createdDate.month == today.month;
+            // All unfinished tasks + completed this month
+            if (t.status == TaskStatus.pending || t.status == TaskStatus.inProgress) {
+              return true;
+            }
+            return referenceDate.year == today.year && referenceDate.month == today.month;
           case 'earlier':
-            // Created before this month
-            return createdDate.isBefore(DateTime(today.year, today.month, 1));
+            // Before this month
+            return referenceDate.isBefore(DateTime(today.year, today.month, 1));
           default:
             return true;
         }
@@ -165,6 +181,82 @@ class TaskProvider extends ChangeNotifier {
       }).toList();
     }
 
+    return filtered;
+  }
+
+  /// Get top-level tasks filtered by time/tag/goal (but NOT status)
+  /// Used for counting tasks per status in the tab badges
+  List<Task> get tasksForStatusCounting {
+    var filtered = _tasks.where((t) => t.parentTaskId == null).toList();
+
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final matchingTaskIds = _getMatchingTaskIds();
+      filtered = filtered.where((t) {
+        if (matchingTaskIds.contains(t.id)) return true;
+        final subtasks = _subtasksMap[t.id] ?? [];
+        return subtasks.any((subtask) => matchingTaskIds.contains(subtask.id));
+      }).toList();
+    }
+
+    // Apply time filter (same logic as filteredTasks but for ALL statuses)
+    if (_selectedTimeFilter != null && _selectedTimeFilter != 'all') {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      filtered = filtered.where((t) {
+        final DateTime referenceDateTime;
+        if (t.status == TaskStatus.completed && t.completedAt != null) {
+          referenceDateTime = t.completedAt!;
+        } else {
+          referenceDateTime = t.createdAt;
+        }
+        final referenceDate = DateTime(
+          referenceDateTime.year,
+          referenceDateTime.month,
+          referenceDateTime.day,
+        );
+
+        switch (_selectedTimeFilter) {
+          case 'today':
+            if (t.status == TaskStatus.pending || t.status == TaskStatus.inProgress) {
+              return true;
+            }
+            return referenceDate == today;
+          case 'week':
+            if (t.status == TaskStatus.pending || t.status == TaskStatus.inProgress) {
+              return true;
+            }
+            final weekStart = today.subtract(const Duration(days: 6));
+            return !referenceDate.isBefore(weekStart);
+          case 'month':
+            if (t.status == TaskStatus.pending || t.status == TaskStatus.inProgress) {
+              return true;
+            }
+            return referenceDate.year == today.year && referenceDate.month == today.month;
+          case 'earlier':
+            return referenceDate.isBefore(DateTime(today.year, today.month, 1));
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
+    // Apply tag filter
+    if (_selectedTagId != null) {
+      filtered = filtered.where((t) {
+        return t.tags.any((tag) => tag.id == _selectedTagId);
+      }).toList();
+    }
+
+    // Apply goal filter
+    if (_selectedGoalId != null) {
+      filtered = filtered.where((t) {
+        return t.goalId == _selectedGoalId;
+      }).toList();
+    }
+
+    // Note: NO status filter applied here — that's the point
     return filtered;
   }
 

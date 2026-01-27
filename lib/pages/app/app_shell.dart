@@ -24,17 +24,20 @@ class AppShell extends StatelessWidget {
 
           // Main content area
           Expanded(
-            child: Column(
+            child: Stack(
               children: [
-                // Draggable title bar area
-                _DraggableTitleBar(),
+                // Page content (full height, no constraints from title bar)
+                Container(
+                  color: AppTheme.backgroundColor,
+                  child: child,
+                ),
 
-                // Page content
-                Expanded(
-                  child: Container(
-                    color: AppTheme.backgroundColor,
-                    child: child,
-                  ),
+                // Draggable title bar area (overlay for window dragging only)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: _DraggableTitleBar(),
                 ),
               ],
             ),
@@ -45,22 +48,14 @@ class AppShell extends StatelessWidget {
   }
 }
 
-/// Draggable title bar for window movement
+/// Draggable title bar for window movement (transparent overlay)
 class _DraggableTitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onPanStart: (_) => appWindow.startDragging(),
-      child: Container(
-        height: 28,
-        color: AppTheme.backgroundColor,
-        child: Row(
-          children: [
-            const Spacer(),
-            // Optional: Add page title or breadcrumbs here
-          ],
-        ),
-      ),
+      behavior: HitTestBehavior.translucent,
+      child: const SizedBox(height: 28),
     );
   }
 }

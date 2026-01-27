@@ -1,17 +1,25 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/goal.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
 
-/// Right sidebar panel showing details of selected goal or task
+/// Redesigned detail panel (300px) with sections:
+/// - Header: status badges + title + description
+/// - Details: goal, due date, focus time, created date
+/// - Subtask progress: ring + progress bar
+/// - Subtask list: mini checkboxes
+/// - Bottom actions: edit + focus
 class TipsPanel extends StatelessWidget {
-  static const double width = 260.0;
+  static const double width = 300.0;
 
   final List<Goal> goals;
   final List<Task> tasks;
   final String? selectedGoalId;
   final String? selectedTaskId;
+  final VoidCallback? onEdit;
+  final ValueChanged<Task>? onFocus;
 
   const TipsPanel({
     super.key,
@@ -19,7 +27,18 @@ class TipsPanel extends StatelessWidget {
     this.tasks = const [],
     this.selectedGoalId,
     this.selectedTaskId,
+    this.onEdit,
+    this.onFocus,
   });
+
+  /// Get selected task object (including subtasks)
+  Task? get _selectedTask {
+    if (selectedTaskId == null) return null;
+    for (final task in tasks) {
+      if (task.id == selectedTaskId) return task;
+    }
+    return null;
+  }
 
   /// Get selected goal object
   Goal? get _selectedGoal {
@@ -29,21 +48,6 @@ class TipsPanel extends StatelessWidget {
     } catch (_) {
       return null;
     }
-  }
-
-  /// Get selected task object (including subtasks)
-  Task? get _selectedTask {
-    if (selectedTaskId == null) return null;
-    // Check all tasks (both top-level and subtasks)
-    for (final task in tasks) {
-      if (task.id == selectedTaskId) return task;
-    }
-    return null;
-  }
-
-  /// Get tasks belonging to a goal
-  List<Task> _getGoalTasks(String goalId) {
-    return tasks.where((t) => t.goalId == goalId && t.parentTaskId == null).toList();
   }
 
   /// Get subtasks for a task
@@ -70,43 +74,6 @@ class TipsPanel extends StatelessWidget {
     }
   }
 
-  /// Format elapsed duration (days, hours, minutes) for completed tasks
-  String _formatElapsedDuration(int seconds) {
-    if (seconds == 0) {
-      return '0m';
-    } else if (seconds < 60) {
-      // Less than 1 minute
-      return '${seconds}s';
-    } else if (seconds < 3600) {
-      // Less than 1 hour - show only minutes
-      final minutes = seconds ~/ 60;
-      return '${minutes}m';
-    } else if (seconds < 86400) {
-      // Less than 1 day - show hours and minutes
-      final hours = seconds ~/ 3600;
-      final minutes = (seconds % 3600) ~/ 60;
-      if (minutes == 0) {
-        return '${hours}h';
-      }
-      return '${hours}h ${minutes}m';
-    } else {
-      // 1 day or more - show days, hours, and minutes
-      final days = seconds ~/ 86400;
-      final hours = (seconds % 86400) ~/ 3600;
-      final minutes = (seconds % 3600) ~/ 60;
-
-      final parts = <String>[];
-      parts.add('${days}d');
-      if (hours > 0) {
-        parts.add('${hours}h');
-      }
-      if (minutes > 0) {
-        parts.add('${minutes}m');
-      }
-      return parts.join(' ');
-    }
-  }
-
   /// Format date for display
   String _formatDate(DateTime date) {
     const months = [
@@ -114,6 +81,54 @@ class TipsPanel extends StatelessWidget {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.high:
+        return AppTheme.errorColor;
+      case TaskPriority.medium:
+        return const Color(0xFFF59E0B);
+      case TaskPriority.low:
+        return AppTheme.successColor;
+    }
+  }
+
+  String _getPriorityLabel(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.high:
+        return '高优先级';
+      case TaskPriority.medium:
+        return '中优先级';
+      case TaskPriority.low:
+        return '低优先级';
+    }
+  }
+
+  String _getStatusLabel(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return '待办';
+      case TaskStatus.inProgress:
+        return '进行中';
+      case TaskStatus.completed:
+        return '已完成';
+      case TaskStatus.deleted:
+        return '已删除';
+    }
+  }
+
+  Color _getStatusColor(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return const Color(0xFFF59E0B);
+      case TaskStatus.inProgress:
+        return AppTheme.primaryColor;
+      case TaskStatus.completed:
+        return AppTheme.successColor;
+      case TaskStatus.deleted:
+        return AppTheme.errorColor;
+    }
   }
 
   @override
@@ -137,212 +152,18 @@ class TipsPanel extends StatelessWidget {
   }
 
   Widget _buildContent() {
-    // Priority: Show task details if task is selected, otherwise show goal details
     if (selectedTaskId != null && _selectedTask != null) {
       return _buildTaskDetails(_selectedTask!);
     } else if (selectedGoalId != null && _selectedGoal != null) {
-      return _buildGoalDetails(_selectedGoal!);
+      return _buildGoalSummary(_selectedGoal!);
     }
-
-    // Fallback (shouldn't happen since panel is hidden when no selection)
     return const SizedBox.shrink();
-  }
-
-  Widget _buildGoalDetails(Goal goal) {
-    final goalTasks = _getGoalTasks(goal.id);
-    final completedTasks = goalTasks.where((t) => t.status == TaskStatus.completed).length;
-    final totalTasks = goalTasks.length;
-
-    // Calculate total focus time including subtasks
-    int totalFocusTime = 0;
-    for (final task in goalTasks) {
-      totalFocusTime += task.focusDuration;
-      // Add subtasks' focus time
-      final subtasks = _getSubtasks(task.id);
-      for (final subtask in subtasks) {
-        totalFocusTime += subtask.focusDuration;
-      }
-    }
-
-    // Count by priority
-    final highPriority = goalTasks.where((t) => t.priority == TaskPriority.high && t.status != TaskStatus.completed).length;
-    final mediumPriority = goalTasks.where((t) => t.priority == TaskPriority.medium && t.status != TaskStatus.completed).length;
-    final lowPriority = goalTasks.where((t) => t.priority == TaskPriority.low && t.status != TaskStatus.completed).length;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTheme.spacingMd),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.flag,
-                  size: 20,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Goal',
-                      style: TextStyle(
-                        fontSize: AppTheme.fontSizeXs,
-                        color: AppTheme.textHint,
-                      ),
-                    ),
-                    Text(
-                      goal.name,
-                      style: const TextStyle(
-                        fontSize: AppTheme.fontSizeMd,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-
-          // Due date
-          _DetailRow(
-            icon: Icons.calendar_today_outlined,
-            label: 'Due Date',
-            value: _formatDate(goal.dueDate),
-          ),
-
-          const SizedBox(height: AppTheme.spacingSm),
-
-          // Focus time
-          _DetailRow(
-            icon: Icons.timer_outlined,
-            label: 'Total Focus Time',
-            value: _formatDuration(totalFocusTime),
-            valueColor: AppTheme.primaryColor,
-          ),
-
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-
-          // Progress section
-          Text(
-            'Progress',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacingSm),
-
-          // Progress bar
-          _ProgressBar(
-            completed: completedTasks,
-            total: totalTasks,
-          ),
-
-          const SizedBox(height: AppTheme.spacingMd),
-
-          // Priority breakdown
-          Text(
-            'Remaining by Priority',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacingSm),
-
-          Row(
-            children: [
-              _PriorityBadge(
-                label: 'High',
-                count: highPriority,
-                color: const Color(0xFFEF4444),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              _PriorityBadge(
-                label: 'Medium',
-                count: mediumPriority,
-                color: const Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              _PriorityBadge(
-                label: 'Low',
-                count: lowPriority,
-                color: const Color(0xFF22C55E),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-
-          // Tasks list
-          Text(
-            'Tasks (${goalTasks.length})',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacingSm),
-
-          if (goalTasks.isEmpty)
-            Text(
-              'No tasks yet',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeXs,
-                color: AppTheme.textHint,
-                fontStyle: FontStyle.italic,
-              ),
-            )
-          else
-            ...goalTasks.take(5).map((task) => _TaskListItem(
-              task: task,
-              formatDuration: _formatDuration,
-            )),
-
-          if (goalTasks.length > 5)
-            Padding(
-              padding: const EdgeInsets.only(top: AppTheme.spacingSm),
-              child: Text(
-                '+${goalTasks.length - 5} more tasks',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeXs,
-                  color: AppTheme.textHint,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 
   Widget _buildTaskDetails(Task task) {
     final subtasks = _getSubtasks(task.id);
-    final completedSubtasks = subtasks.where((t) => t.status == TaskStatus.completed).length;
+    final completedSubtasks =
+        subtasks.where((t) => t.status == TaskStatus.completed).length;
     final totalSubtasks = subtasks.length;
 
     // Calculate total focus time including subtasks
@@ -351,338 +172,288 @@ class TipsPanel extends StatelessWidget {
       totalFocusTime += subtask.focusDuration;
     }
 
-    // Get parent task if this is a subtask
-    Task? parentTask;
-    if (task.parentTaskId != null) {
-      try {
-        parentTask = tasks.firstWhere((t) => t.id == task.parentTaskId);
-      } catch (_) {}
-    }
+    final priorityColor = _getPriorityColor(task.priority);
+    final statusColor = _getStatusColor(task.status);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTheme.spacingMd),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with priority indicator
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.task_alt,
-                  size: 20,
-                  color: _getPriorityColor(task.priority),
-                ),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Task',
-                          style: TextStyle(
-                            fontSize: AppTheme.fontSizeXs,
-                            color: AppTheme.textHint,
+    return Column(
+      children: [
+        // Scrollable content
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ===== Header Section =====
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: AppTheme.dividerColor, width: 1),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Status badges
+                      Row(
+                        children: [
+                          _StatusBadge(
+                            label: _getPriorityLabel(task.priority),
+                            color: priorityColor,
                           ),
+                          const SizedBox(width: 8),
+                          _StatusBadge(
+                            label: _getStatusLabel(task.status),
+                            color: statusColor,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      // Task title
+                      Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                          height: 1.4,
+                          decoration: task.status == TaskStatus.completed
+                              ? TextDecoration.lineThrough
+                              : null,
                         ),
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                      ),
+                      // Description
+                      if (task.description != null &&
+                          task.description!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          task.description!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondary,
+                            height: 1.5,
                           ),
-                          child: Text(
-                            _getPriorityLabel(task.priority),
-                            style: TextStyle(
-                              fontSize: AppTheme.fontSizeXs - 1,
-                              fontWeight: FontWeight.w600,
-                              color: _getPriorityColor(task.priority),
-                            ),
-                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    ),
-                    Text(
-                      task.title,
-                      style: TextStyle(
-                        fontSize: AppTheme.fontSizeMd,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                        decoration: task.status == TaskStatus.completed
-                            ? TextDecoration.lineThrough
+                    ],
+                  ),
+                ),
+
+                // ===== Details Section =====
+                _DetailSection(
+                  title: '详情',
+                  children: [
+                    if (task.goal != null)
+                      _DetailField(
+                        label: '📁 目标',
+                        value: task.goal!.name,
+                      ),
+                    if (task.dueDate != null)
+                      _DetailField(
+                        label: '📅 到期日',
+                        value: _formatDate(task.dueDate!),
+                        valueColor: _isDueSoon(task.dueDate!)
+                            ? AppTheme.errorColor
                             : null,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    _DetailField(
+                      label: '⏱ 已专注',
+                      value: _formatDuration(totalFocusTime),
+                      valueColor: AppTheme.primaryColor,
+                    ),
+                    _DetailField(
+                      label: '📆 创建于',
+                      value: _formatDate(task.createdAt),
                     ),
                   ],
+                ),
+
+                // ===== Subtask Progress Section =====
+                if (subtasks.isNotEmpty) ...[
+                  _DetailSection(
+                    title: '子任务进度',
+                    children: [
+                      _SubtaskProgressWidget(
+                        completed: completedSubtasks,
+                        total: totalSubtasks,
+                      ),
+                    ],
+                  ),
+
+                  // ===== Subtask List Section =====
+                  _DetailSection(
+                    title: '子任务',
+                    children: [
+                      for (final subtask in subtasks)
+                        _SubtaskMiniItem(
+                          task: subtask,
+                          priorityColor: _getPriorityColor(subtask.priority),
+                        ),
+                    ],
+                  ),
+                ],
+
+                // Tags section
+                if (task.tags.isNotEmpty)
+                  _DetailSection(
+                    title: '标签',
+                    children: [
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: task.tags.map((tag) {
+                          final tagColor = _parseTagColor(tag.color);
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: tagColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              tag.name,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: tagColor,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+
+        // ===== Bottom Actions =====
+        Container(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              // Edit button
+              Expanded(
+                child: _DetailButton(
+                  label: '✏️ 编辑',
+                  onTap: onEdit,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Focus button
+              Expanded(
+                child: _DetailButton(
+                  label: '▶ 开始专注',
+                  isPrimary: true,
+                  onTap: task.status != TaskStatus.completed && onFocus != null
+                      ? () => onFocus!(task)
+                      : null,
                 ),
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
 
-          // Status badge
-          if (task.status == TaskStatus.completed)
-            Padding(
-              padding: const EdgeInsets.only(top: AppTheme.spacingSm),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppTheme.successColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+  Widget _buildGoalSummary(Goal goal) {
+    final goalTasks = tasks
+        .where((t) => t.goalId == goal.id && t.parentTaskId == null)
+        .toList();
+    final completedTasks =
+        goalTasks.where((t) => t.status == TaskStatus.completed).length;
+
+    // Calculate total focus time including subtasks
+    int totalFocusTime = 0;
+    for (final task in goalTasks) {
+      totalFocusTime += task.focusDuration;
+      final subtasks = _getSubtasks(task.id);
+      for (final subtask in subtasks) {
+        totalFocusTime += subtask.focusDuration;
+      }
+    }
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: AppTheme.dividerColor, width: 1),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 14,
-                      color: AppTheme.successColor,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Completed',
-                      style: TextStyle(
-                        fontSize: AppTheme.fontSizeXs,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.successColor,
+                    Icon(Icons.flag, size: 20, color: AppTheme.primaryColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        goal.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
-
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-
-          // Hierarchy info
-          if (task.goal != null || parentTask != null) ...[
-            if (task.goal != null)
-              _DetailRow(
-                icon: Icons.flag_outlined,
-                label: 'Goal',
-                value: task.goal!.name,
-              ),
-            if (parentTask != null)
-              Padding(
-                padding: const EdgeInsets.only(top: AppTheme.spacingSm),
-                child: _DetailRow(
-                  icon: Icons.subdirectory_arrow_right,
-                  label: 'Parent Task',
-                  value: parentTask.title,
-                ),
-              ),
-            const SizedBox(height: AppTheme.spacingSm),
-          ],
-
-          // Due date
-          if (task.dueDate != null)
-            _DetailRow(
-              icon: Icons.calendar_today_outlined,
-              label: 'Due Date',
-              value: _formatDate(task.dueDate!),
-            ),
-
-          if (task.dueDate != null)
-            const SizedBox(height: AppTheme.spacingSm),
-
-          // Focus time
-          _DetailRow(
-            icon: Icons.timer_outlined,
-            label: 'Focus Time',
-            value: _formatDuration(totalFocusTime),
-            valueColor: AppTheme.primaryColor,
           ),
 
-          // Priority status section
-          ..._buildPriorityStatus(task, parentTask, subtasks),
-
-          // Description
-          if (task.description != null && task.description!.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spacingMd),
-            Divider(height: 1, color: AppTheme.dividerColor),
-            const SizedBox(height: AppTheme.spacingMd),
-
-            Text(
-              'Description',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+          _DetailSection(
+            title: '详情',
+            children: [
+              _DetailField(
+                label: '📅 到期日',
+                value: _formatDate(goal.dueDate),
               ),
-            ),
-            const SizedBox(height: AppTheme.spacingSm),
-            Text(
-              task.description!,
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeXs,
-                color: AppTheme.textSecondary,
-                height: 1.4,
+              _DetailField(
+                label: '📋 任务',
+                value: '$completedTasks/${goalTasks.length} 已完成',
               ),
-            ),
-          ],
-
-          // Tags
-          if (task.tags.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spacingMd),
-            Divider(height: 1, color: AppTheme.dividerColor),
-            const SizedBox(height: AppTheme.spacingMd),
-
-            Text(
-              'Tags',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+              _DetailField(
+                label: '⏱ 总专注',
+                value: _formatDuration(totalFocusTime),
+                valueColor: AppTheme.primaryColor,
               ),
-            ),
-            const SizedBox(height: AppTheme.spacingSm),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: task.tags.map((tag) {
-                final tagColor = _parseTagColor(tag.color);
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: tagColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    tag.name,
-                    style: TextStyle(
-                      fontSize: AppTheme.fontSizeXs,
-                      fontWeight: FontWeight.w500,
-                      color: tagColor,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+            ],
+          ),
 
-          // Subtasks progress
-          if (subtasks.isNotEmpty) ...[
-            const SizedBox(height: AppTheme.spacingMd),
-            Divider(height: 1, color: AppTheme.dividerColor),
-            const SizedBox(height: AppTheme.spacingMd),
-
-            Text(
-              'Subtasks ($totalSubtasks)',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppTheme.spacingSm),
-
-            _ProgressBar(
-              completed: completedSubtasks,
-              total: totalSubtasks,
-            ),
-
-            const SizedBox(height: AppTheme.spacingSm),
-
-            ...subtasks.map((subtask) => _TaskListItem(
-              task: subtask,
-              formatDuration: _formatDuration,
-            )),
-          ],
-
-          // Time information section
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-
-          // For completed tasks, show created, completed, and total duration
-          if (task.status == TaskStatus.completed && task.completedAt != null) ...[
-            Text(
-              'Time Tracking',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: AppTheme.spacingSm),
-
-            _DetailRow(
-              icon: Icons.play_arrow,
-              label: 'Created',
-              value: _formatDate(task.createdAt),
-            ),
-            const SizedBox(height: AppTheme.spacingSm),
-
-            _DetailRow(
-              icon: Icons.check_circle,
-              label: 'Completed',
-              value: _formatDate(task.completedAt!),
-              valueColor: AppTheme.successColor,
-            ),
-            const SizedBox(height: AppTheme.spacingMd),
-
-            // Duration section with nested items
-            Row(
+          if (goalTasks.isNotEmpty) ...[
+            _DetailSection(
+              title: '进度',
               children: [
-                Icon(
-                  Icons.timer,
-                  size: 14,
-                  color: AppTheme.textHint,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Duration',
-                  style: TextStyle(
-                    fontSize: AppTheme.fontSizeSm,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+                _SubtaskProgressWidget(
+                  completed: completedTasks,
+                  total: goalTasks.length,
                 ),
               ],
             ),
-            const SizedBox(height: AppTheme.spacingSm),
 
-            // Nested duration details with indentation
-            Padding(
-              padding: const EdgeInsets.only(left: 22),
-              child: Column(
-                children: [
-                  _DetailRow(
-                    icon: Icons.schedule,
-                    label: 'Elapsed Time',
-                    value: _formatElapsedDuration(
-                      task.completedAt!.difference(task.createdAt).inSeconds,
-                    ),
-                    valueColor: AppTheme.accentColor,
+            // Task list
+            _DetailSection(
+              title: '任务 (${goalTasks.length})',
+              children: [
+                for (final task in goalTasks)
+                  _SubtaskMiniItem(
+                    task: task,
+                    priorityColor: _getPriorityColor(task.priority),
                   ),
-                  const SizedBox(height: AppTheme.spacingSm),
-                  _DetailRow(
-                    icon: Icons.psychology,
-                    label: 'Focus Time',
-                    value: _formatDuration(totalFocusTime),
-                    valueColor: AppTheme.primaryColor,
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            // For pending tasks, just show created date
-            _DetailRow(
-              icon: Icons.access_time,
-              label: 'Created',
-              value: _formatDate(task.createdAt),
+              ],
             ),
           ],
         ],
@@ -690,202 +461,100 @@ class TipsPanel extends StatelessWidget {
     );
   }
 
-  Color _getPriorityColor(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return const Color(0xFFEF4444);
-      case TaskPriority.medium:
-        return const Color(0xFFF59E0B);
-      case TaskPriority.low:
-        return const Color(0xFF22C55E);
-    }
-  }
-
-  String _getPriorityLabel(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return 'High';
-      case TaskPriority.medium:
-        return 'Medium';
-      case TaskPriority.low:
-        return 'Low';
-    }
+  bool _isDueSoon(DateTime dueDate) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final taskDate = DateTime(dueDate.year, dueDate.month, dueDate.day);
+    return taskDate.isBefore(today) || taskDate == today;
   }
 
   Color _parseTagColor(String hexColor) {
     final hex = hexColor.replaceAll('#', '');
     return Color(int.parse('FF$hex', radix: 16));
   }
+}
 
-  /// Build priority status display based on task type
-  List<Widget> _buildPriorityStatus(Task task, Task? parentTask, List<Task> subtasks) {
-    final widgets = <Widget>[];
+// ===== Sub-widgets =====
 
-    // For subtasks: show parent's subtasks priority distribution
-    if (parentTask != null) {
-      final parentSubtasks = _getSubtasks(parentTask.id);
-      if (parentSubtasks.isNotEmpty) {
-        final highPriority = parentSubtasks.where((t) =>
-          t.priority == TaskPriority.high && t.status != TaskStatus.completed
-        ).length;
-        final mediumPriority = parentSubtasks.where((t) =>
-          t.priority == TaskPriority.medium && t.status != TaskStatus.completed
-        ).length;
-        final lowPriority = parentSubtasks.where((t) =>
-          t.priority == TaskPriority.low && t.status != TaskStatus.completed
-        ).length;
+/// Status badge (priority/status)
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color color;
 
-        widgets.addAll([
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-          Text(
-            'Parent Task Subtasks',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacingSm),
-          Row(
-            children: [
-              _PriorityBadge(
-                label: 'High',
-                count: highPriority,
-                color: const Color(0xFFEF4444),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              _PriorityBadge(
-                label: 'Medium',
-                count: mediumPriority,
-                color: const Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              _PriorityBadge(
-                label: 'Low',
-                count: lowPriority,
-                color: const Color(0xFF22C55E),
-              ),
-            ],
-          ),
-        ]);
-      }
-    }
-    // For parent tasks: show own subtasks priority distribution
-    else if (subtasks.isNotEmpty) {
-      final highPriority = subtasks.where((t) =>
-        t.priority == TaskPriority.high && t.status != TaskStatus.completed
-      ).length;
-      final mediumPriority = subtasks.where((t) =>
-        t.priority == TaskPriority.medium && t.status != TaskStatus.completed
-      ).length;
-      final lowPriority = subtasks.where((t) =>
-        t.priority == TaskPriority.low && t.status != TaskStatus.completed
-      ).length;
+  const _StatusBadge({
+    required this.label,
+    required this.color,
+  });
 
-      widgets.addAll([
-        const SizedBox(height: AppTheme.spacingMd),
-        Divider(height: 1, color: AppTheme.dividerColor),
-        const SizedBox(height: AppTheme.spacingMd),
-        Text(
-          'Subtasks by Priority',
-          style: TextStyle(
-            fontSize: AppTheme.fontSizeSm,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
         ),
-        const SizedBox(height: AppTheme.spacingSm),
-        Row(
-          children: [
-            _PriorityBadge(
-              label: 'High',
-              count: highPriority,
-              color: const Color(0xFFEF4444),
-            ),
-            const SizedBox(width: AppTheme.spacingSm),
-            _PriorityBadge(
-              label: 'Medium',
-              count: mediumPriority,
-              color: const Color(0xFFF59E0B),
-            ),
-            const SizedBox(width: AppTheme.spacingSm),
-            _PriorityBadge(
-              label: 'Low',
-              count: lowPriority,
-              color: const Color(0xFF22C55E),
-            ),
-          ],
-        ),
-      ]);
-    }
-
-    // If task has a goal: show goal's tasks priority distribution
-    if (task.goal != null) {
-      final goalTasks = _getGoalTasks(task.goal!.id);
-      if (goalTasks.isNotEmpty) {
-        final highPriority = goalTasks.where((t) =>
-          t.priority == TaskPriority.high && t.status != TaskStatus.completed
-        ).length;
-        final mediumPriority = goalTasks.where((t) =>
-          t.priority == TaskPriority.medium && t.status != TaskStatus.completed
-        ).length;
-        final lowPriority = goalTasks.where((t) =>
-          t.priority == TaskPriority.low && t.status != TaskStatus.completed
-        ).length;
-
-        widgets.addAll([
-          const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
-          const SizedBox(height: AppTheme.spacingMd),
-          Text(
-            'Goal Tasks by Priority',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.spacingSm),
-          Row(
-            children: [
-              _PriorityBadge(
-                label: 'High',
-                count: highPriority,
-                color: const Color(0xFFEF4444),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              _PriorityBadge(
-                label: 'Medium',
-                count: mediumPriority,
-                color: const Color(0xFFF59E0B),
-              ),
-              const SizedBox(width: AppTheme.spacingSm),
-              _PriorityBadge(
-                label: 'Low',
-                count: lowPriority,
-                color: const Color(0xFF22C55E),
-              ),
-            ],
-          ),
-        ]);
-      }
-    }
-
-    return widgets;
+      ),
+    );
   }
 }
 
-/// Detail row with icon, label and value
-class _DetailRow extends StatelessWidget {
-  final IconData icon;
+/// Detail section with title and children
+class _DetailSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _DetailSection({
+    required this.title,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: const Color(0xFFF1F5F9),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textHint,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+/// Detail field row: label on left, value on right
+class _DetailField extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
 
-  const _DetailRow({
-    required this.icon,
+  const _DetailField({
     required this.label,
     required this.value,
     this.valueColor,
@@ -893,41 +562,38 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 14,
-          color: AppTheme.textHint,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: AppTheme.fontSizeXs,
-            color: AppTheme.textSecondary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
           ),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: AppTheme.fontSizeXs,
-            fontWeight: FontWeight.w500,
-            color: valueColor ?? AppTheme.textPrimary,
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: valueColor ?? AppTheme.textPrimary,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-/// Progress bar with completed/total display
-class _ProgressBar extends StatelessWidget {
+/// Subtask progress widget with ring + bar
+class _SubtaskProgressWidget extends StatelessWidget {
   final int completed;
   final int total;
 
-  const _ProgressBar({
+  const _SubtaskProgressWidget({
     required this.completed,
     required this.total,
   });
@@ -935,45 +601,68 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = total > 0 ? completed / total : 0.0;
+    final percent = (progress * 100).toInt();
 
     return Container(
-      padding: const EdgeInsets.all(AppTheme.spacingSm),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Completed',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeXs,
-                  color: AppTheme.textSecondary,
+          // Progress ring
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: CustomPaint(
+              painter: _ProgressRingPainter(
+                progress: progress,
+                backgroundColor: AppTheme.dividerColor,
+                progressColor: AppTheme.primaryColor,
+                strokeWidth: 4,
+              ),
+              child: Center(
+                child: Text(
+                  '$percent%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.primaryColor,
+                  ),
                 ),
               ),
-              Text(
-                '$completed/$total',
-                style: const TextStyle(
-                  fontSize: AppTheme.fontSizeXs,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: AppTheme.dividerColor,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                progress >= 1.0 ? AppTheme.successColor : AppTheme.primaryColor,
-              ),
-              minHeight: 6,
+          const SizedBox(width: 16),
+          // Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '已完成 $completed / $total 个子任务',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textHint,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // Progress bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: AppTheme.dividerColor,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      progress >= 1.0
+                          ? AppTheme.successColor
+                          : AppTheme.primaryColor,
+                    ),
+                    minHeight: 4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -982,106 +671,184 @@ class _ProgressBar extends StatelessWidget {
   }
 }
 
-/// Priority badge widget
-class _PriorityBadge extends StatelessWidget {
-  final String label;
-  final int count;
-  final Color color;
+/// CustomPaint painter for progress ring
+class _ProgressRingPainter extends CustomPainter {
+  final double progress;
+  final Color backgroundColor;
+  final Color progressColor;
+  final double strokeWidth;
 
-  const _PriorityBadge({
-    required this.label,
-    required this.count,
-    required this.color,
+  _ProgressRingPainter({
+    required this.progress,
+    required this.backgroundColor,
+    required this.progressColor,
+    required this.strokeWidth,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Column(
-          children: [
-            Text(
-              '$count',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeXs - 1,
-                color: color.withValues(alpha: 0.8),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - strokeWidth) / 2;
+
+    // Background circle
+    final bgPaint = Paint()
+      ..color = backgroundColor
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+    canvas.drawCircle(center, radius, bgPaint);
+
+    // Progress arc
+    if (progress > 0) {
+      final progressPaint = Paint()
+        ..color = progressColor
+        ..strokeWidth = strokeWidth
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2, // Start from top
+        2 * math.pi * progress,
+        false,
+        progressPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProgressRingPainter oldDelegate) {
+    return oldDelegate.progress != progress;
   }
 }
 
-/// Task list item for showing in goal/task details
-class _TaskListItem extends StatelessWidget {
+/// Mini subtask item for the detail panel
+class _SubtaskMiniItem extends StatelessWidget {
   final Task task;
-  final String Function(int) formatDuration;
+  final Color priorityColor;
 
-  const _TaskListItem({
+  const _SubtaskMiniItem({
     required this.task,
-    required this.formatDuration,
+    required this.priorityColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isCompleted = task.status == TaskStatus.completed;
+    final isDone = task.status == TaskStatus.completed;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
+          // Mini checkbox
           Container(
             width: 14,
             height: 14,
             decoration: BoxDecoration(
-              color: isCompleted ? AppTheme.successColor : Colors.transparent,
+              color: isDone ? AppTheme.successColor : Colors.transparent,
               border: Border.all(
-                color: isCompleted ? AppTheme.successColor : AppTheme.dividerColor,
+                color: isDone ? AppTheme.successColor : AppTheme.dividerColor,
                 width: 1.5,
               ),
               borderRadius: BorderRadius.circular(3),
             ),
-            child: isCompleted
-                ? const Icon(Icons.check, size: 10, color: Colors.white)
+            child: isDone
+                ? const Icon(Icons.check, size: 9, color: Colors.white)
                 : null,
           ),
           const SizedBox(width: 8),
+          // Title
           Expanded(
             child: Text(
               task.title,
               style: TextStyle(
-                fontSize: AppTheme.fontSizeXs,
-                color: isCompleted ? AppTheme.textHint : AppTheme.textPrimary,
-                decoration: isCompleted ? TextDecoration.lineThrough : null,
+                fontSize: 12,
+                color: isDone ? AppTheme.textHint : AppTheme.textPrimary,
+                decoration: isDone ? TextDecoration.lineThrough : null,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (task.focusDuration > 0)
-            Text(
-              formatDuration(task.focusDuration),
+          // Priority dot
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: priorityColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bottom action button
+class _DetailButton extends StatefulWidget {
+  final String label;
+  final bool isPrimary;
+  final VoidCallback? onTap;
+
+  const _DetailButton({
+    required this.label,
+    this.isPrimary = false,
+    this.onTap,
+  });
+
+  @override
+  State<_DetailButton> createState() => _DetailButtonState();
+}
+
+class _DetailButtonState extends State<_DetailButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDisabled = widget.onTap == null;
+
+    return MouseRegion(
+      cursor: isDisabled
+          ? SystemMouseCursors.forbidden
+          : SystemMouseCursors.click,
+      onEnter: (_) {
+        if (!isDisabled) setState(() => _isHovered = true);
+      },
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          decoration: BoxDecoration(
+            color: widget.isPrimary
+                ? (_isHovered ? const Color(0xFF4F46E5) : AppTheme.primaryColor)
+                : (_isHovered
+                    ? const Color(0xFFF1F5F9)
+                    : AppTheme.surfaceColor),
+            border: Border.all(
+              color: widget.isPrimary
+                  ? AppTheme.primaryColor
+                  : AppTheme.dividerColor,
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Center(
+            child: Text(
+              widget.label,
               style: TextStyle(
-                fontSize: AppTheme.fontSizeXs - 1,
-                color: AppTheme.primaryColor.withValues(alpha: 0.7),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: widget.isPrimary
+                    ? Colors.white
+                    : (isDisabled
+                        ? AppTheme.textHint
+                        : AppTheme.textSecondary),
               ),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

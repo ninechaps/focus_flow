@@ -4,6 +4,7 @@ import '../../../models/task.dart';
 import 'task_item.dart';
 
 /// Groups tasks by time period (Today, Tomorrow, This Week, etc.)
+/// Redesigned header: date text + count badge + separator line
 class TaskGroup extends StatefulWidget {
   final String title;
   final String? subtitle;
@@ -47,6 +48,33 @@ class _TaskGroupState extends State<TaskGroup> {
     _isExpanded = widget.initiallyExpanded;
   }
 
+  /// Get Chinese label and formatted date for group title
+  String _getGroupLabel() {
+    final now = DateTime.now();
+    switch (widget.title) {
+      case 'Today':
+        return '今天 · ${now.month}月${now.day}日';
+      case 'Tomorrow':
+        final tomorrow = now.add(const Duration(days: 1));
+        return '明天 · ${tomorrow.month}月${tomorrow.day}日';
+      case 'This Week':
+        return '本周';
+      case 'Overdue':
+        return '已逾期';
+      case 'Yesterday':
+        final yesterday = now.subtract(const Duration(days: 1));
+        return '昨天 · ${yesterday.month}月${yesterday.day}日';
+      case 'Later':
+        return '以后';
+      default:
+        return widget.title;
+    }
+  }
+
+  String _getCountLabel(int count) {
+    return '$count 个任务';
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalCount = widget.tasks.length;
@@ -54,50 +82,49 @@ class _TaskGroupState extends State<TaskGroup> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Group header
+        // Group header: date text + count badge + line
         MouseRegion(
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
-            child: Container(
+            child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTheme.spacingMd,
-                vertical: AppTheme.spacingSm,
+                horizontal: 24,
+                vertical: 4,
               ),
               child: Row(
                 children: [
-                  Icon(
-                    _isExpanded
-                        ? Icons.keyboard_arrow_down_rounded
-                        : Icons.keyboard_arrow_right_rounded,
-                    size: 16,
-                    color: AppTheme.textSecondary,
-                  ),
-                  const SizedBox(width: 4),
+                  // Date label
                   Text(
-                    widget.title,
-                    style: TextStyle(
-                      fontSize: AppTheme.fontSizeXs,
+                    _getGroupLabel(),
+                    style: const TextStyle(
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.textSecondary,
-                      letterSpacing: 0.3,
                     ),
                   ),
-                  const Spacer(),
-                  // Simple count
+                  const SizedBox(width: 8),
+                  // Count badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
-                      color: AppTheme.dividerColor.withValues(alpha: 0.5),
+                      color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '$totalCount',
+                      _getCountLabel(totalCount),
                       style: TextStyle(
-                        fontSize: AppTheme.fontSizeXs,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 11,
                         color: AppTheme.textHint,
                       ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Separator line
+                  Expanded(
+                    child: Container(
+                      height: 1,
+                      color: AppTheme.dividerColor,
                     ),
                   ),
                 ],
@@ -106,47 +133,54 @@ class _TaskGroupState extends State<TaskGroup> {
           ),
         ),
 
+        const SizedBox(height: 2),
+
         // Task list with drag-and-drop reordering
         if (_isExpanded)
-          ReorderableListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            buildDefaultDragHandles: false,
-            itemCount: widget.tasks.length,
-            onReorder: (oldIndex, newIndex) {
-              if (widget.onReorder != null) {
-                widget.onReorder!(oldIndex, newIndex);
-              }
-            },
-            itemBuilder: (context, index) {
-              final task = widget.tasks[index];
-              final subtasks = widget.subtasksMap[task.id] ?? [];
-              final isTaskSelected = widget.selectedTaskId == task.id;
-              final selectedSubtaskId = subtasks.any((s) => s.id == widget.selectedTaskId)
-                  ? widget.selectedTaskId
-                  : null;
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: ReorderableListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              itemCount: widget.tasks.length,
+              onReorder: (oldIndex, newIndex) {
+                if (widget.onReorder != null) {
+                  widget.onReorder!(oldIndex, newIndex);
+                }
+              },
+              itemBuilder: (context, index) {
+                final task = widget.tasks[index];
+                final subtasks = widget.subtasksMap[task.id] ?? [];
+                final isTaskSelected = widget.selectedTaskId == task.id;
+                final selectedSubtaskId = subtasks.any((s) => s.id == widget.selectedTaskId)
+                    ? widget.selectedTaskId
+                    : null;
 
-              return ReorderableDragStartListener(
-                key: ValueKey(task.id),
-                index: index,
-                child: TaskItem(
-                  task: task,
-                  subtasks: subtasks,
-                  isSelected: isTaskSelected,
-                  selectedSubtaskId: selectedSubtaskId,
-                  onTaskStatusChanged: widget.onTaskStatusChanged,
-                  onTaskTap: widget.onTaskTap,
-                  onAddSubtask: () => widget.onAddSubtask?.call(task),
-                  onTaskFocus: widget.onFocus,
-                  onSubtasksReorder: (oldIndex, newIndex) {
-                    if (widget.onSubtasksReorder != null) {
-                      widget.onSubtasksReorder!(task, oldIndex, newIndex);
-                    }
-                  },
-                ),
-              );
-            },
+                return ReorderableDragStartListener(
+                  key: ValueKey(task.id),
+                  index: index,
+                  child: TaskItem(
+                    task: task,
+                    subtasks: subtasks,
+                    isSelected: isTaskSelected,
+                    selectedSubtaskId: selectedSubtaskId,
+                    onTaskStatusChanged: widget.onTaskStatusChanged,
+                    onTaskTap: widget.onTaskTap,
+                    onAddSubtask: () => widget.onAddSubtask?.call(task),
+                    onTaskFocus: widget.onFocus,
+                    onSubtasksReorder: (oldIndex, newIndex) {
+                      if (widget.onSubtasksReorder != null) {
+                        widget.onSubtasksReorder!(task, oldIndex, newIndex);
+                      }
+                    },
+                  ),
+                );
+              },
+            ),
           ),
+
+        const SizedBox(height: 12),
       ],
     );
   }

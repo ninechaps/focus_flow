@@ -9,7 +9,7 @@ class StatisticsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppTheme.spacingLg),
+      padding: const EdgeInsets.fromLTRB(AppTheme.spacingLg, 36, AppTheme.spacingLg, AppTheme.spacingLg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

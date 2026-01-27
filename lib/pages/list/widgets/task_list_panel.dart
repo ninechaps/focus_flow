@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
+import '../../../providers/task_provider.dart';
 import 'task_group.dart';
 import 'status_tabs.dart';
 
@@ -45,6 +47,10 @@ class TaskListPanel extends StatelessWidget {
     final topLevelTasks = tasks.where((t) => t.parentTaskId == null).toList();
     final groupedTasks = TaskGroupHelper.groupTasksByDate(topLevelTasks);
 
+    // Get tasks filtered by time/tag/goal (but not status) for tab count badges
+    final provider = context.read<TaskProvider>();
+    final tasksForCounting = provider.tasksForStatusCounting;
+
     return Container(
       color: AppTheme.backgroundColor,
       child: Column(
@@ -57,10 +63,11 @@ class TaskListPanel extends StatelessWidget {
             onAddTask: onAddTask,
           ),
 
-          // Status tabs (fixed below search bar)
+          // Status tabs with count badges
           StatusTabs(
             selectedStatus: selectedStatusFilter,
             onStatusChanged: onStatusChanged,
+            tasks: tasksForCounting,
           ),
 
           // Task groups
@@ -103,7 +110,7 @@ class TaskListPanel extends StatelessWidget {
   }
 }
 
-/// Header with title, search bar, and add button
+/// Header with redesigned search bar and "＋ 新建任务" button
 class _TaskListHeader extends StatelessWidget {
   final String? searchQuery;
   final ValueChanged<String>? onSearchChanged;
@@ -117,62 +124,50 @@ class _TaskListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppTheme.spacingMd,
-        vertical: AppTheme.spacingSm,
-      ),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
-        border: Border(
-          bottom: BorderSide(
-            color: AppTheme.dividerColor,
-            width: 1,
-          ),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 36, 24, 12),
       child: Row(
         children: [
-          // Search bar
+          // Search bar - white background, thin border, focus ring
           Expanded(
             child: SizedBox(
-              height: 30,
+              height: 34,
               child: TextField(
                 onChanged: onSearchChanged,
-                style: const TextStyle(fontSize: AppTheme.fontSizeXs),
+                style: const TextStyle(fontSize: 13),
                 decoration: InputDecoration(
-                  hintText: 'Search tasks...',
+                  hintText: '搜索任务...',
                   hintStyle: TextStyle(
                     color: AppTheme.textHint,
-                    fontSize: AppTheme.fontSizeXs,
+                    fontSize: 13,
                   ),
                   prefixIcon: Padding(
-                    padding: const EdgeInsets.only(left: 8, right: 4),
+                    padding: const EdgeInsets.only(left: 12, right: 8),
                     child: Icon(
                       Icons.search,
                       size: 14,
                       color: AppTheme.textHint,
                     ),
                   ),
-                  prefixIconConstraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 34, minHeight: 34),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingSm,
+                    horizontal: 12,
                     vertical: 0,
                   ),
                   filled: true,
-                  fillColor: AppTheme.backgroundColor,
+                  fillColor: AppTheme.surfaceColor,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.dividerColor, width: 1),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.dividerColor, width: 1),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                    borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                      color: AppTheme.primaryColor,
                       width: 1,
                     ),
                   ),
@@ -181,31 +176,87 @@ class _TaskListHeader extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: AppTheme.spacingSm),
+          const SizedBox(width: 12),
 
-          // Add task button - icon only, minimal style
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              ),
-              child: IconButton(
-                onPressed: onAddTask,
-                icon: const Icon(
-                  Icons.add,
-                  size: 16,
+          // Add task button - "＋ 新建任务" with purple background
+          _AddTaskButton(onTap: onAddTask),
+        ],
+      ),
+    );
+  }
+}
+
+/// Animated "＋ 新建任务" button with hover effect
+class _AddTaskButton extends StatefulWidget {
+  final VoidCallback? onTap;
+
+  const _AddTaskButton({this.onTap});
+
+  @override
+  State<_AddTaskButton> createState() => _AddTaskButtonState();
+}
+
+class _AddTaskButtonState extends State<_AddTaskButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? const Color(0xFF4F46E5) // Darker on hover
+                : AppTheme.primaryColor,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+          ),
+          transform: _isHovered
+              ? Matrix4.translationValues(0, -1.0, 0)
+              : Matrix4.identity(),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '＋',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
                   color: Colors.white,
                 ),
-                padding: EdgeInsets.zero,
-                tooltip: 'Add Task',
               ),
-            ),
+              SizedBox(width: 6),
+              Text(
+                '新建任务',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -223,7 +274,6 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine message and icon based on selected status filter
     String title;
     String subtitle;
     IconData icon;
@@ -231,27 +281,26 @@ class _EmptyState extends StatelessWidget {
 
     switch (selectedStatusFilter) {
       case 'pending':
-        title = 'No TODO tasks';
-        subtitle = 'Create your first task to get started';
+        title = '没有待办任务';
+        subtitle = '创建你的第一个任务开始吧';
         icon = Icons.task_alt_outlined;
         showCreateButton = true;
         break;
       case 'in_progress':
-        title = 'No tasks in progress';
-        subtitle = 'Start working on a task to see it here';
+        title = '没有进行中的任务';
+        subtitle = '开始一个任务后会显示在这里';
         icon = Icons.hourglass_empty;
         showCreateButton = false;
         break;
       case 'completed':
-        title = 'No completed tasks';
-        subtitle = 'Complete a task to see it here';
+        title = '没有已完成的任务';
+        subtitle = '完成一个任务后会显示在这里';
         icon = Icons.check_circle_outline;
         showCreateButton = false;
         break;
       default:
-        // No filter selected - show all tasks empty state
-        title = 'No tasks yet';
-        subtitle = 'Create your first task to get started';
+        title = '还没有任务';
+        subtitle = '创建你的第一个任务开始吧';
         icon = Icons.task_alt_outlined;
         showCreateButton = true;
         break;
@@ -288,7 +337,7 @@ class _EmptyState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onAddTask,
               icon: const Icon(Icons.add, size: 14),
-              label: const Text('Add Task'),
+              label: const Text('新建任务'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,
