@@ -10,12 +10,14 @@ import '../../../widgets/dropdown.dart';
 import '../../../widgets/date_picker.dart';
 import '../../../widgets/dialog.dart';
 
-/// 添加任务对话框 - 紧凑专业设计版本
+/// 添加/编辑任务对话框 - macOS 风格精致设计
 class AddTaskDialog extends StatefulWidget {
   final List<Tag> availableTags;
   final List<Goal> availableGoals;
   final String? parentTaskId;
   final String? defaultGoalId;
+  /// 传入时为编辑模式
+  final Task? editTask;
 
   const AddTaskDialog({
     super.key,
@@ -23,6 +25,7 @@ class AddTaskDialog extends StatefulWidget {
     this.availableGoals = const [],
     this.parentTaskId,
     this.defaultGoalId,
+    this.editTask,
   });
 
   @override
@@ -39,10 +42,23 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   String? _selectedGoalId;
   final Set<String> _selectedTagIds = {};
 
+  bool get _isEditing => widget.editTask != null;
+  bool get _isSubtask => widget.parentTaskId != null || widget.editTask?.parentTaskId != null;
+
   @override
   void initState() {
     super.initState();
-    _selectedGoalId = widget.defaultGoalId;
+    if (_isEditing) {
+      final task = widget.editTask!;
+      _titleController.text = task.title;
+      _descriptionController.text = task.description ?? '';
+      _priority = task.priority;
+      _dueDate = task.dueDate;
+      _selectedGoalId = task.goalId;
+      _selectedTagIds.addAll(task.tags.map((t) => t.id));
+    } else {
+      _selectedGoalId = widget.defaultGoalId;
+    }
   }
 
   @override
@@ -52,7 +68,6 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     super.dispose();
   }
 
-
   void _submit() {
     if (_formKey.currentState!.validate()) {
       final now = DateTime.now();
@@ -61,18 +76,21 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           .toList();
 
       final task = Task(
-        id: const Uuid().v4(),
+        id: _isEditing ? widget.editTask!.id : const Uuid().v4(),
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
         dueDate: _dueDate,
-        parentTaskId: widget.parentTaskId,
+        parentTaskId: _isEditing ? widget.editTask!.parentTaskId : widget.parentTaskId,
         goalId: _selectedGoalId,
         priority: _priority,
-        status: TaskStatus.pending,
+        status: _isEditing ? widget.editTask!.status : TaskStatus.pending,
         tags: selectedTags,
-        createdAt: now,
+        focusDuration: _isEditing ? widget.editTask!.focusDuration : 0,
+        sortOrder: _isEditing ? widget.editTask!.sortOrder : 0,
+        completedAt: _isEditing ? widget.editTask!.completedAt : null,
+        createdAt: _isEditing ? widget.editTask!.createdAt : now,
         updatedAt: now,
       );
       Navigator.of(context).pop(task);
@@ -85,73 +103,130 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   }
 
   String _formatDate(DateTime dt) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${months[dt.month - 1]} ${dt.day}';
+    return '${dt.year}/${dt.month}/${dt.day}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final isSubtask = widget.parentTaskId != null;
+    final colors = context.appColors;
+    final dialogTitle = _isEditing
+        ? (_isSubtask ? '编辑子任务' : '编辑任务')
+        : (_isSubtask ? '新建子任务' : '新建任务');
+    final submitLabel = _isEditing ? '保存' : (_isSubtask ? '创建子任务' : '创建任务');
 
     return DialogBox(
-      title: isSubtask ? 'Add New Subtask' : 'Add New Task',
+      title: dialogTitle,
       onClose: () => Navigator.pop(context),
-      width: 480,
+      width: 520,
       content: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title
+            // 任务标题
             AppTextField(
-              label: 'Task Title',
-              hint: 'e.g., Design homepage mockup',
-              helper: 'Make it clear and actionable',
+              label: '任务标题',
+              hint: '输入任务名称...',
               controller: _titleController,
-              autofocus: true,
+              autofocus: !_isEditing,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Task title is required';
+                  return '请输入任务标题';
                 }
                 if (value.trim().length > 200) {
-                  return 'Task title must be less than 200 characters';
+                  return '标题不能超过200个字符';
                 }
                 return null;
               },
             ),
-            const SizedBox(height: 18), // 18px
+            const SizedBox(height: 14),
 
-            // Description
+            // 描述
             AppTextField(
-              label: 'Description (optional)',
-              hint: 'Add more details...',
-              helper: 'Help your team understand the context',
+              label: '描述（可选）',
+              hint: '添加更多细节...',
               controller: _descriptionController,
-              maxLines: 3,
+              maxLines: 2,
               keyboardType: TextInputType.multiline,
               validator: (value) {
                 if (value != null && value.length > 1000) {
-                  return 'Description must be less than 1000 characters';
+                  return '描述不能超过1000个字符';
                 }
                 return null;
               },
             ),
-            const SizedBox(height: 18), // 18px
+            const SizedBox(height: 14),
 
-            // Goal Selection (Only for top-level tasks)
-            if (!isSubtask && widget.availableGoals.isNotEmpty) ...[
+            // 优先级 + 截止日期 同一行
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 优先级
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '优先级',
+                        style: TextStyle(
+                          fontSize: AppTheme.fontSizeSm,
+                          fontWeight: FontWeight.w500,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          _PriorityDot(
+                            label: '低',
+                            color: AppTheme.successColor,
+                            isSelected: _priority == TaskPriority.low,
+                            onTap: () => setState(() => _priority = TaskPriority.low),
+                          ),
+                          const SizedBox(width: 8),
+                          _PriorityDot(
+                            label: '中',
+                            color: const Color(0xFFF59E0B),
+                            isSelected: _priority == TaskPriority.medium,
+                            onTap: () => setState(() => _priority = TaskPriority.medium),
+                          ),
+                          const SizedBox(width: 8),
+                          _PriorityDot(
+                            label: '高',
+                            color: AppTheme.errorColor,
+                            isSelected: _priority == TaskPriority.high,
+                            onTap: () => setState(() => _priority = TaskPriority.high),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // 截止日期
+                Expanded(
+                  child: DatePicker(
+                    label: '截止日期（可选）',
+                    selectedDate: _dueDate,
+                    formatDate: _formatDate,
+                    onDateChanged: (date) => setState(() => _dueDate = date),
+                    onClear: () => setState(() => _dueDate = null),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+
+            // 关联目标 + 标签 同一行（或按需展示）
+            if (!_isSubtask && widget.availableGoals.isNotEmpty) ...[
               ProfessionalDropdown<String>(
-                label: 'Associated Goal (optional)',
-                helper: 'Link this task to a goal',
+                label: '关联目标（可选）',
                 value: _selectedGoalId,
                 items: [
                   const DropdownMenuItem<String>(
                     value: null,
-                    child: Text('No goal - Miscellaneous task'),
+                    child: Text('无关联目标'),
                   ),
                   ...widget.availableGoals.map((goal) => DropdownMenuItem(
                     value: goal.id,
@@ -160,108 +235,41 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                 ],
                 onChanged: (value) => setState(() => _selectedGoalId = value),
               ),
-              const SizedBox(height: 18), // 18px
+              const SizedBox(height: 14),
             ],
 
-            // Due Date
-            DatePicker(
-              label: 'Due Date (optional)',
-              helper: 'When should this be completed?',
-              selectedDate: _dueDate,
-              formatDate: _formatDate,
-              onDateChanged: (date) => setState(() => _dueDate = date),
-              onClear: () => setState(() => _dueDate = null),
-            ),
-            const SizedBox(height: 18), // 18px
-
-            // Priority Level
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Priority Level',
-                  style: TextStyle(
-                    fontSize: AppTheme.fontSizeSm,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8), // 8px
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      _PriorityButton(
-                        label: 'Low',
-                        icon: Icons.arrow_downward,
-                        isSelected: _priority == TaskPriority.low,
-                        color: const Color(0xFF10B981),
-                        onTap: () =>
-                            setState(() => _priority = TaskPriority.low),
-                      ),
-                      const SizedBox(width: 6), // 缩小 30%
-                      _PriorityButton(
-                        label: 'Medium',
-                        icon: Icons.remove,
-                        isSelected: _priority == TaskPriority.medium,
-                        color: const Color(0xFFF59E0B),
-                        onTap: () =>
-                            setState(() => _priority = TaskPriority.medium),
-                      ),
-                      const SizedBox(width: 6), // 缩小 30%
-                      _PriorityButton(
-                        label: 'High',
-                        icon: Icons.arrow_upward,
-                        isSelected: _priority == TaskPriority.high,
-                        color: const Color(0xFFEF4444),
-                        onTap: () =>
-                            setState(() => _priority = TaskPriority.high),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // Tags
+            // 标签
             if (widget.availableTags.isNotEmpty) ...[
-              const SizedBox(height: 18), // 18px
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Tags',
-                    style: TextStyle(
-                      fontSize: AppTheme.fontSizeSm,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 8), // 8px
-                  Wrap(
-                    spacing: 8, // 8px
-                    runSpacing: 8, // 8px
-                    children: widget.availableTags.map((tag) {
-                      final isSelected = _selectedTagIds.contains(tag.id);
-                      final tagColor = _parseColor(tag.color);
-                      return _TagChip(
-                        label: tag.name,
-                        color: tagColor,
-                        isSelected: isSelected,
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedTagIds.remove(tag.id);
-                            } else {
-                              _selectedTagIds.add(tag.id);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                ],
+              Text(
+                '标签',
+                style: TextStyle(
+                  fontSize: AppTheme.fontSizeSm,
+                  fontWeight: FontWeight.w500,
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: widget.availableTags.map((tag) {
+                  final isSelected = _selectedTagIds.contains(tag.id);
+                  final tagColor = _parseColor(tag.color);
+                  return _TagChip(
+                    label: tag.name,
+                    color: tagColor,
+                    isSelected: isSelected,
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          _selectedTagIds.remove(tag.id);
+                        } else {
+                          _selectedTagIds.add(tag.id);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
               ),
             ],
           ],
@@ -269,11 +277,11 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
       ),
       actions: [
         DialogButton(
-          label: 'Cancel',
+          label: '取消',
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(
-          label: isSubtask ? 'Create Subtask' : 'Create Task',
+          label: submitLabel,
           onPressed: _submit,
           isPrimary: true,
         ),
@@ -282,73 +290,85 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   }
 }
 
-/// Priority Button Component - 优先级按钮
-class _PriorityButton extends StatelessWidget {
+/// 优先级圆点选择器 — Things 3 风格
+class _PriorityDot extends StatefulWidget {
   final String label;
-  final IconData icon;
-  final bool isSelected;
   final Color color;
+  final bool isSelected;
   final VoidCallback onTap;
 
-  const _PriorityButton({
+  const _PriorityDot({
     required this.label,
-    required this.icon,
-    required this.isSelected,
     required this.color,
+    required this.isSelected,
     required this.onTap,
   });
 
   @override
+  State<_PriorityDot> createState() => _PriorityDotState();
+}
+
+class _PriorityDotState extends State<_PriorityDot> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 9, // 缩小 30%
-          vertical: 5, // 缩小 30%
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          border: Border.all(
-            color: isSelected ? color : AppTheme.dividerColor,
-            width: isSelected ? 1.5 : 1,
+    final colors = context.appColors;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+            color: widget.isSelected
+                ? widget.color.withValues(alpha: 0.12)
+                : _isHovered
+                    ? colors.hoverBg
+                    : Colors.transparent,
+            border: Border.all(
+              color: widget.isSelected ? widget.color : colors.divider,
+              width: widget.isSelected ? 1.5 : 1,
+            ),
           ),
-          color: isSelected ? color.withAlpha(12) : AppTheme.backgroundColor,
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withAlpha(8),
-                    blurRadius: 4,
-                  ),
-                ]
-              : [],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 10, // 缩小 30%
-              color: isSelected ? color : AppTheme.textSecondary,
-            ),
-            const SizedBox(width: 4), // 缩小 30%
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 9, // 缩小 30%
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? color : AppTheme.textSecondary,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  shape: BoxShape.circle,
+                  boxShadow: widget.isSelected
+                      ? [BoxShadow(color: widget.color.withValues(alpha: 0.4), blurRadius: 4)]
+                      : null,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 5),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: widget.isSelected ? widget.color : colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Tag Chip Component - 标签芯片
-class _TagChip extends StatelessWidget {
+/// 标签选择芯片
+class _TagChip extends StatefulWidget {
   final String label;
   final Color color;
   final bool isSelected;
@@ -362,43 +382,63 @@ class _TagChip extends StatelessWidget {
   });
 
   @override
+  State<_TagChip> createState() => _TagChipState();
+}
+
+class _TagChipState extends State<_TagChip> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12, // 12px
-          vertical: 7, // 7px
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          border: Border.all(
-            color: isSelected ? color : AppTheme.dividerColor,
-            width: isSelected ? 1.5 : 1,
+    final colors = context.appColors;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            color: widget.isSelected
+                ? widget.color.withValues(alpha: 0.1)
+                : _isHovered
+                    ? colors.hoverBg
+                    : colors.badgeBg,
+            border: Border.all(
+              color: widget.isSelected ? widget.color : Colors.transparent,
+              width: 1,
+            ),
           ),
-          color: isSelected ? color.withAlpha(12) : AppTheme.backgroundColor,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isSelected)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Icon(
-                  Icons.check,
-                  size: 13,
-                  color: color,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  shape: BoxShape.circle,
                 ),
               ),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? color : AppTheme.textPrimary,
+              const SizedBox(width: 5),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: widget.isSelected ? widget.color : colors.textPrimary,
+                ),
               ),
-            ),
-          ],
+              if (widget.isSelected) ...[
+                const SizedBox(width: 4),
+                Icon(Icons.check, size: 11, color: widget.color),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -421,6 +461,24 @@ Future<Task?> showAddTaskDialog(
       availableGoals: availableGoals,
       parentTaskId: parentTaskId,
       defaultGoalId: defaultGoalId,
+    ),
+  );
+}
+
+/// 显示编辑任务对话框
+Future<Task?> showEditTaskDialog(
+  BuildContext context, {
+  required Task task,
+  List<Tag> availableTags = const [],
+  List<Goal> availableGoals = const [],
+}) {
+  return showDialog<Task>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AddTaskDialog(
+      availableTags: availableTags,
+      availableGoals: availableGoals,
+      editTask: task,
     ),
   );
 }

@@ -62,6 +62,7 @@ class StatisticsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
         final tasks = provider.tasks;
@@ -119,7 +120,7 @@ class StatisticsPage extends StatelessWidget {
               const SizedBox(height: AppTheme.spacingSm),
               Text(
                 'Track your productivity and progress',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
               ),
               const SizedBox(height: AppTheme.spacingXl),
 
@@ -177,14 +178,15 @@ class StatisticsPage extends StatelessWidget {
     int maxValue,
     DateTime today,
   ) {
+    final colors = context.appColors;
     const double chartHeight = 160.0;
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +215,7 @@ class StatisticsPage extends StatelessWidget {
                               _formatDuration(values[i]),
                               style: TextStyle(
                                 fontSize: AppTheme.fontSizeXs,
-                                color: isToday ? AppTheme.primaryColor.shade700 : AppTheme.textHint,
+                                color: isToday ? AppTheme.primaryColor.shade700 : colors.textHint,
                               ),
                             ),
                           ),
@@ -221,7 +223,7 @@ class StatisticsPage extends StatelessWidget {
                         Container(
                           height: barHeight < 4 && values[i] > 0 ? 4 : barHeight,
                           decoration: BoxDecoration(
-                            color: isToday ? AppTheme.primaryColor.shade700 : AppTheme.primaryColor,
+                            color: isToday ? AppTheme.primaryColor.shade700 : colors.primary,
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                           ),
                         ),
@@ -232,7 +234,7 @@ class StatisticsPage extends StatelessWidget {
                           style: TextStyle(
                             fontSize: AppTheme.fontSizeXs,
                             fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
-                            color: isToday ? AppTheme.textPrimary : AppTheme.textSecondary,
+                            color: isToday ? colors.textPrimary : colors.textSecondary,
                           ),
                         ),
                       ],
@@ -254,12 +256,13 @@ class StatisticsPage extends StatelessWidget {
     int completed,
     int total,
   ) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,7 +292,7 @@ class StatisticsPage extends StatelessWidget {
                     if (pending > 0)
                       Expanded(
                         flex: pending,
-                        child: Container(color: AppTheme.textHint),
+                        child: Container(color: colors.textHint),
                       ),
                   ],
                 ),
@@ -302,11 +305,11 @@ class StatisticsPage extends StatelessWidget {
           const SizedBox(height: AppTheme.spacingSm),
           _StatusRow(color: AppTheme.accentColor, label: 'In Progress', count: inProgress),
           const SizedBox(height: AppTheme.spacingSm),
-          _StatusRow(color: AppTheme.textHint, label: 'Pending', count: pending),
+          _StatusRow(color: colors.textHint, label: 'Pending', count: pending),
 
           if (total == 0) ...[
             const SizedBox(height: AppTheme.spacingLg),
-            Text('No tasks yet', style: TextStyle(fontSize: AppTheme.fontSizeSm, color: AppTheme.textHint)),
+            Text('No tasks yet', style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textHint)),
           ],
         ],
       ),
@@ -318,15 +321,16 @@ class StatisticsPage extends StatelessWidget {
     List<Goal> goals,
     List<Task> tasks,
   ) {
+    final colors = context.appColors;
     // Top-level tasks only (exclude deleted)
     final topLevel = tasks.where((t) => t.parentTaskId == null && t.status != TaskStatus.deleted).toList();
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +338,7 @@ class StatisticsPage extends StatelessWidget {
           Text('Goal Progress', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: AppTheme.spacingLg),
           if (goals.isEmpty)
-            Text('No goals yet', style: TextStyle(fontSize: AppTheme.fontSizeSm, color: AppTheme.textHint))
+            Text('No goals yet', style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textHint))
           else
             Expanded(
               child: ListView.separated(
@@ -356,19 +360,19 @@ class StatisticsPage extends StatelessWidget {
                           Expanded(
                             child: Text(
                               goal.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: AppTheme.fontSizeSm,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.textPrimary,
+                                color: colors.textPrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Text(
                             '$completedGoalTasks / $totalGoalTasks',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: AppTheme.fontSizeXs,
-                              color: AppTheme.textSecondary,
+                              color: colors.textSecondary,
                             ),
                           ),
                         ],
@@ -379,8 +383,8 @@ class StatisticsPage extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 6,
-                          backgroundColor: AppTheme.dividerColor,
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          backgroundColor: colors.divider,
+                          valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                         ),
                       ),
                     ],
@@ -405,32 +409,33 @@ class _OverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: AppTheme.iconSizeLg, color: AppTheme.primaryColor),
+          Icon(icon, size: AppTheme.iconSizeLg, color: colors.primary),
           const SizedBox(height: AppTheme.spacingMd),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppTheme.fontSizeXxl,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: AppTheme.spacingXs),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppTheme.fontSizeSm,
-              color: AppTheme.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
         ],
@@ -448,6 +453,7 @@ class _StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       children: [
         Container(
@@ -459,15 +465,15 @@ class _StatusRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(fontSize: AppTheme.fontSizeSm, color: AppTheme.textSecondary),
+            style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textSecondary),
           ),
         ),
         Text(
           '$count',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: AppTheme.fontSizeSm,
             fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
+            color: colors.textPrimary,
           ),
         ),
       ],

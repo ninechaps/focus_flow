@@ -65,6 +65,7 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isHighlighted = widget.isActive || _isHovered;
 
     return MouseRegion(
@@ -83,9 +84,9 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
           ),
           decoration: BoxDecoration(
             color: widget.isActive
-                ? AppTheme.primaryColor.withValues(alpha: 0.12)
+                ? colors.primary.withValues(alpha: 0.12)
                 : _isHovered
-                    ? AppTheme.primaryColor.withValues(alpha: 0.06)
+                    ? colors.primary.withValues(alpha: 0.06)
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           ),
@@ -96,10 +97,10 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
                 isHighlighted ? widget.activeIcon : widget.icon,
                 size: 18,
                 color: widget.isActive
-                    ? AppTheme.primaryColor
+                    ? colors.primary
                     : isHighlighted
                         ? AppTheme.primaryColor.shade600
-                        : AppTheme.textSecondary,
+                        : colors.textSecondary,
               ),
               const SizedBox(height: 2),
               Text(
@@ -108,10 +109,10 @@ class _SidebarMenuItemState extends State<_SidebarMenuItem> {
                   fontSize: 10,
                   fontWeight: widget.isActive ? FontWeight.w600 : FontWeight.w500,
                   color: widget.isActive
-                      ? AppTheme.primaryColor
+                      ? colors.primary
                       : isHighlighted
                           ? AppTheme.primaryColor.shade600
-                          : AppTheme.textSecondary,
+                          : colors.textSecondary,
                 ),
               ),
             ],

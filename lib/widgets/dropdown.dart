@@ -5,38 +5,6 @@ import '../theme/app_theme.dart';
 /// ProfessionalDropdown - 专业下拉菜单组件
 /// ============================================================================
 
-class _DropdownColors {
-  static const Color primary = Color(0xFF6366F1); // Indigo-500
-  static const Color textPrimary = AppTheme.textPrimary;
-  static const Color textSecondary = AppTheme.textSecondary;
-  static const Color border = AppTheme.dividerColor;
-  static const Color background = AppTheme.backgroundColor;
-  static const Color surface = AppTheme.surfaceColor;
-}
-
-class _DropdownTypography {
-  static const TextStyle labelStyle = TextStyle(
-    fontSize: 12.5,
-    fontWeight: FontWeight.w500,
-    color: _DropdownColors.textSecondary,
-    height: 1.2,
-  );
-
-  static const TextStyle inputStyle = TextStyle(
-    fontSize: 13.5,
-    fontWeight: FontWeight.normal,
-    color: _DropdownColors.textPrimary,
-    height: 1.4,
-  );
-
-  static const TextStyle helperStyle = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: _DropdownColors.textSecondary,
-    height: 1.3,
-  );
-}
-
 /// 标准下拉菜单组件 - 用于 Goal 选择等
 class ProfessionalDropdown<T> extends StatefulWidget {
   final String label;
@@ -76,15 +44,17 @@ class ProfessionalIconDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           displayText,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: _DropdownColors.textPrimary,
+            color: colors.textPrimary,
           ),
         ),
         MouseRegion(
@@ -95,7 +65,7 @@ class ProfessionalIconDropdown<T> extends StatelessWidget {
             child: Icon(
               icon,
               size: 18,
-              color: _DropdownColors.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
         ),
@@ -121,26 +91,35 @@ class _ProfessionalDropdownState<T> extends State<ProfessionalDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isFocused = _focusNode.hasFocus;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: _DropdownTypography.labelStyle),
+        Text(
+          widget.label,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
+            color: colors.textSecondary,
+            height: 1.2,
+          ),
+        ),
         const SizedBox(height: 4),
         Container(
-          height: 38, // 统一高度标准
+          height: 38,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             border: Border.all(
-              color: isFocused ? _DropdownColors.primary : _DropdownColors.border,
+              color: isFocused ? colors.primary : colors.divider,
               width: isFocused ? 1.5 : 1,
             ),
-            color: _DropdownColors.background,
+            color: colors.background,
             boxShadow: isFocused
                 ? [
                     BoxShadow(
-                      color: _DropdownColors.primary.withAlpha(8),
+                      color: colors.primary.withAlpha(8),
                       blurRadius: 4,
                       spreadRadius: 0,
                     ),
@@ -154,25 +133,38 @@ class _ProfessionalDropdownState<T> extends State<ProfessionalDropdown<T>> {
               onChanged: widget.onChanged,
               isExpanded: true,
               focusNode: _focusNode,
-              style: _DropdownTypography.inputStyle,
-              dropdownColor: _DropdownColors.surface,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.normal,
+                color: colors.textPrimary,
+                height: 1.4,
+              ),
+              dropdownColor: colors.surface,
               padding: const EdgeInsets.symmetric(
-                horizontal: 14, // 14px
+                horizontal: 14,
               ),
               isDense: true,
               icon: Icon(
                 Icons.expand_more,
                 size: 14,
                 color: isFocused
-                    ? _DropdownColors.primary
-                    : _DropdownColors.textSecondary,
+                    ? colors.primary
+                    : colors.textSecondary,
               ),
             ),
           ),
         ),
         if (widget.helper != null) ...[
           const SizedBox(height: 4),
-          Text(widget.helper!, style: _DropdownTypography.helperStyle),
+          Text(
+            widget.helper!,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.normal,
+              color: colors.textSecondary,
+              height: 1.3,
+            ),
+          ),
         ],
       ],
     );

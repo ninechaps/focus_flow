@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
+import '../../../models/enums.dart';
 import 'task_item.dart';
 
 /// Groups tasks by time period (Today, Tomorrow, This Week, etc.)
@@ -18,6 +19,11 @@ class TaskGroup extends StatefulWidget {
   final ValueChanged<Task>? onFocus;
   final Function(int oldIndex, int newIndex)? onReorder;
   final Function(Task parentTask, int oldIndex, int newIndex)? onSubtasksReorder;
+  // Right-click menu callbacks
+  final ValueChanged<Task>? onEditTask;
+  final ValueChanged<Task>? onDeleteTask;
+  final void Function(Task task, TaskPriority priority)? onSetPriority;
+  final void Function(Task task, TaskStatus status)? onSetStatus;
 
   const TaskGroup({
     super.key,
@@ -33,6 +39,10 @@ class TaskGroup extends StatefulWidget {
     this.onFocus,
     this.onReorder,
     this.onSubtasksReorder,
+    this.onEditTask,
+    this.onDeleteTask,
+    this.onSetPriority,
+    this.onSetStatus,
   });
 
   @override
@@ -48,7 +58,6 @@ class _TaskGroupState extends State<TaskGroup> {
     _isExpanded = widget.initiallyExpanded;
   }
 
-  /// Get Chinese label and formatted date for group title
   String _getGroupLabel() {
     final now = DateTime.now();
     switch (widget.title) {
@@ -77,6 +86,7 @@ class _TaskGroupState extends State<TaskGroup> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final totalCount = widget.tasks.length;
 
     return Column(
@@ -97,10 +107,10 @@ class _TaskGroupState extends State<TaskGroup> {
                   // Date label
                   Text(
                     _getGroupLabel(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textSecondary,
+                      color: colors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -108,14 +118,14 @@ class _TaskGroupState extends State<TaskGroup> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: colors.badgeBg,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       _getCountLabel(totalCount),
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.textHint,
+                        color: colors.textHint,
                       ),
                     ),
                   ),
@@ -124,7 +134,7 @@ class _TaskGroupState extends State<TaskGroup> {
                   Expanded(
                     child: Container(
                       height: 1,
-                      color: AppTheme.dividerColor,
+                      color: colors.divider,
                     ),
                   ),
                 ],
@@ -169,6 +179,10 @@ class _TaskGroupState extends State<TaskGroup> {
                     onTaskTap: widget.onTaskTap,
                     onAddSubtask: () => widget.onAddSubtask?.call(task),
                     onTaskFocus: widget.onFocus,
+                    onEditTask: widget.onEditTask,
+                    onDeleteTask: widget.onDeleteTask,
+                    onSetPriority: widget.onSetPriority,
+                    onSetStatus: widget.onSetStatus,
                     onSubtasksReorder: (oldIndex, newIndex) {
                       if (widget.onSubtasksReorder != null) {
                         widget.onSubtasksReorder!(task, oldIndex, newIndex);
@@ -188,8 +202,6 @@ class _TaskGroupState extends State<TaskGroup> {
 
 /// Helper class to group tasks by date
 class TaskGroupHelper {
-  /// Groups tasks by date categories based on dueDate
-  /// For tasks without dueDate, groups by createdAt with relative labels
   static Map<String, List<Task>> groupTasksByDate(List<Task> tasks) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -197,22 +209,18 @@ class TaskGroupHelper {
     final tomorrow = today.add(const Duration(days: 1));
     final weekEnd = today.add(Duration(days: 7 - today.weekday));
 
-    // Use LinkedHashMap to maintain insertion order
     final Map<String, List<Task>> groups = {};
 
-    // Initialize standard groups in order
     groups['Overdue'] = [];
     groups['Today'] = [];
     groups['Tomorrow'] = [];
     groups['This Week'] = [];
     groups['Later'] = [];
 
-    // For tasks without due date, we'll group by creation date
     final Map<String, List<Task>> createdDateGroups = {};
 
     for (final task in tasks) {
       if (task.dueDate == null) {
-        // Group by creation date with relative labels
         final createdDate = DateTime(
           task.createdAt.year,
           task.createdAt.month,
@@ -225,7 +233,6 @@ class TaskGroupHelper {
         } else if (createdDate == yesterday) {
           groupKey = 'Yesterday';
         } else {
-          // Show exact date for older tasks
           groupKey = _formatFullDate(createdDate);
         }
 
@@ -253,23 +260,17 @@ class TaskGroupHelper {
       }
     }
 
-    // Remove empty standard groups
     groups.removeWhere((key, value) => value.isEmpty);
 
-    // Sort created date groups by date (most recent first)
     final sortedCreatedKeys = createdDateGroups.keys.toList()
       ..sort((a, b) {
-        // "Today" should come first, then "Yesterday", then by date
         if (a == 'Today') return -1;
         if (b == 'Today') return 1;
         if (a == 'Yesterday') return -1;
         if (b == 'Yesterday') return 1;
-        // For date strings, reverse order (newer first)
         return b.compareTo(a);
       });
 
-    // Merge created date groups with standard groups
-    // If a key already exists (e.g., "Today"), merge the tasks
     for (final key in sortedCreatedKeys) {
       if (groups.containsKey(key)) {
         groups[key]!.addAll(createdDateGroups[key]!);
@@ -281,7 +282,6 @@ class TaskGroupHelper {
     return groups;
   }
 
-  /// Gets subtitle for date group (e.g., "Monday, Dec 23")
   static String? getGroupSubtitle(String groupName) {
     final now = DateTime.now();
     switch (groupName) {

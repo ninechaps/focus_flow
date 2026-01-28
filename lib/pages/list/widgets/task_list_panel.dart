@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
+import '../../../models/enums.dart';
 import '../../../providers/task_provider.dart';
 import 'task_group.dart';
 import 'status_tabs.dart';
@@ -22,6 +23,11 @@ class TaskListPanel extends StatelessWidget {
   final ValueChanged<Task>? onFocus;
   final Function(String groupKey, int oldIndex, int newIndex, List<Task> groupTasks)? onReorder;
   final Function(Task parentTask, int oldIndex, int newIndex)? onSubtasksReorder;
+  // Right-click menu callbacks
+  final ValueChanged<Task>? onEditTask;
+  final ValueChanged<Task>? onDeleteTask;
+  final void Function(Task task, TaskPriority priority)? onSetPriority;
+  final void Function(Task task, TaskStatus status)? onSetStatus;
 
   const TaskListPanel({
     super.key,
@@ -39,10 +45,16 @@ class TaskListPanel extends StatelessWidget {
     this.onFocus,
     this.onReorder,
     this.onSubtasksReorder,
+    this.onEditTask,
+    this.onDeleteTask,
+    this.onSetPriority,
+    this.onSetStatus,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     // Filter out subtasks (tasks with parentTaskId) for top-level display
     final topLevelTasks = tasks.where((t) => t.parentTaskId == null).toList();
     final groupedTasks = TaskGroupHelper.groupTasksByDate(topLevelTasks);
@@ -52,7 +64,7 @@ class TaskListPanel extends StatelessWidget {
     final tasksForCounting = provider.tasksForStatusCounting;
 
     return Container(
-      color: AppTheme.backgroundColor,
+      color: colors.background,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -94,6 +106,10 @@ class TaskListPanel extends StatelessWidget {
                           onTaskTap: onTaskTap,
                           onAddSubtask: onAddSubtask,
                           onFocus: onFocus,
+                          onEditTask: onEditTask,
+                          onDeleteTask: onDeleteTask,
+                          onSetPriority: onSetPriority,
+                          onSetStatus: onSetStatus,
                           onReorder: (oldIndex, newIndex) {
                             if (onReorder != null) {
                               onReorder!(entry.key, oldIndex, newIndex, entry.value);
@@ -124,21 +140,23 @@ class _TaskListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),  // 减小顶部边距从36到16
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
       child: Row(
         children: [
-          // Search bar - white background, thin border, focus ring
+          // Search bar
           Expanded(
             child: SizedBox(
               height: 34,
               child: TextField(
                 onChanged: onSearchChanged,
-                style: const TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 13, color: colors.textPrimary),
                 decoration: InputDecoration(
                   hintText: '搜索任务...',
                   hintStyle: TextStyle(
-                    color: AppTheme.textHint,
+                    color: colors.textHint,
                     fontSize: 13,
                   ),
                   prefixIcon: Padding(
@@ -146,7 +164,7 @@ class _TaskListHeader extends StatelessWidget {
                     child: Icon(
                       Icons.search,
                       size: 14,
-                      color: AppTheme.textHint,
+                      color: colors.textHint,
                     ),
                   ),
                   prefixIconConstraints: const BoxConstraints(minWidth: 34, minHeight: 34),
@@ -155,19 +173,19 @@ class _TaskListHeader extends StatelessWidget {
                     vertical: 0,
                   ),
                   filled: true,
-                  fillColor: AppTheme.surfaceColor,
+                  fillColor: colors.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.dividerColor, width: 1),
+                    borderSide: BorderSide(color: colors.divider, width: 1),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.dividerColor, width: 1),
+                    borderSide: BorderSide(color: colors.divider, width: 1),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: AppTheme.primaryColor,
+                      color: colors.primary,
                       width: 1,
                     ),
                   ),
@@ -178,7 +196,7 @@ class _TaskListHeader extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // Add task button - "＋ 新建任务" with purple background
+          // Add task button
           _AddTaskButton(onTap: onAddTask),
         ],
       ),
@@ -201,6 +219,8 @@ class _AddTaskButtonState extends State<_AddTaskButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -212,20 +232,20 @@ class _AddTaskButtonState extends State<_AddTaskButton> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
           decoration: BoxDecoration(
             color: _isHovered
-                ? const Color(0xFF4F46E5) // Darker on hover
-                : AppTheme.primaryColor,
+                ? colors.primaryHover
+                : colors.primary,
             borderRadius: BorderRadius.circular(8),
             boxShadow: _isHovered
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.35),
+                      color: colors.primary.withValues(alpha: 0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      color: colors.primary.withValues(alpha: 0.3),
                       blurRadius: 3,
                       offset: const Offset(0, 1),
                     ),
@@ -274,6 +294,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     String title;
     String subtitle;
     IconData icon;
@@ -313,7 +335,7 @@ class _EmptyState extends StatelessWidget {
           Icon(
             icon,
             size: 48,
-            color: AppTheme.dividerColor,
+            color: colors.divider,
           ),
           const SizedBox(height: AppTheme.spacingSm),
           Text(
@@ -321,7 +343,7 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: AppTheme.fontSizeMd,
               fontWeight: FontWeight.w500,
-              color: AppTheme.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
@@ -329,7 +351,7 @@ class _EmptyState extends StatelessWidget {
             subtitle,
             style: TextStyle(
               fontSize: AppTheme.fontSizeXs,
-              color: AppTheme.textHint,
+              color: colors.textHint,
             ),
           ),
           if (showCreateButton) ...[
@@ -339,7 +361,7 @@ class _EmptyState extends StatelessWidget {
               icon: const Icon(Icons.add, size: 14),
               label: const Text('新建任务'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
+                backgroundColor: colors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 textStyle: const TextStyle(fontSize: AppTheme.fontSizeXs),

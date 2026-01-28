@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
+import '../../../widgets/context_menu.dart';
 
 /// Redesigned task item: card-style with border, hover effects, priority bar,
 /// meta row (goal, due date, tags, subtask progress), and action buttons.
@@ -16,6 +17,11 @@ class TaskItem extends StatefulWidget {
   final VoidCallback? onAddSubtask;
   final ValueChanged<Task>? onTaskFocus;
   final Function(int oldIndex, int newIndex)? onSubtasksReorder;
+  // Right-click menu callbacks
+  final ValueChanged<Task>? onEditTask;
+  final ValueChanged<Task>? onDeleteTask;
+  final void Function(Task task, TaskPriority priority)? onSetPriority;
+  final void Function(Task task, TaskStatus status)? onSetStatus;
 
   const TaskItem({
     super.key,
@@ -29,6 +35,10 @@ class TaskItem extends StatefulWidget {
     this.onAddSubtask,
     this.onTaskFocus,
     this.onSubtasksReorder,
+    this.onEditTask,
+    this.onDeleteTask,
+    this.onSetPriority,
+    this.onSetStatus,
   });
 
   @override
@@ -76,7 +86,6 @@ class _TaskItemState extends State<TaskItem> {
     return taskDate.isBefore(today) || taskDate == today;
   }
 
-  /// Format focus duration for display
   String _formatDuration(int seconds) {
     if (seconds < 60) {
       return '${seconds}s';
@@ -93,7 +102,6 @@ class _TaskItemState extends State<TaskItem> {
     }
   }
 
-  /// Calculate total focus duration including subtasks
   int _getTotalFocusDuration() {
     if (widget.subtasks.isEmpty) {
       return widget.task.focusDuration;
@@ -116,8 +124,111 @@ class _TaskItemState extends State<TaskItem> {
     }
   }
 
+  /// Show right-click context menu
+  Future<void> _showContextMenu(BuildContext context, Offset position) async {
+    final result = await ContextMenu.show<String>(
+      context: context,
+      position: position,
+      groups: [
+        ContextMenuGroup(
+          items: [
+            const ContextMenuItem(
+              label: '编辑任务',
+              icon: Icons.edit_outlined,
+              value: 'edit',
+            ),
+          ],
+        ),
+        ContextMenuGroup(
+          items: [
+            ContextMenuItem(
+              label: '高优先级',
+              icon: Icons.circle,
+              value: 'priority_high',
+              enabled: widget.task.priority != TaskPriority.high,
+            ),
+            ContextMenuItem(
+              label: '中优先级',
+              icon: Icons.circle,
+              value: 'priority_medium',
+              enabled: widget.task.priority != TaskPriority.medium,
+            ),
+            ContextMenuItem(
+              label: '低优先级',
+              icon: Icons.circle,
+              value: 'priority_low',
+              enabled: widget.task.priority != TaskPriority.low,
+            ),
+          ],
+        ),
+        ContextMenuGroup(
+          items: [
+            ContextMenuItem(
+              label: '待办',
+              icon: Icons.radio_button_unchecked,
+              value: 'status_pending',
+              enabled: widget.task.status != TaskStatus.pending,
+            ),
+            ContextMenuItem(
+              label: '进行中',
+              icon: Icons.timelapse,
+              value: 'status_in_progress',
+              enabled: widget.task.status != TaskStatus.inProgress,
+            ),
+            ContextMenuItem(
+              label: '已完成',
+              icon: Icons.check_circle_outline,
+              value: 'status_completed',
+              enabled: widget.task.status != TaskStatus.completed,
+            ),
+          ],
+        ),
+        ContextMenuGroup(
+          items: [
+            const ContextMenuItem(
+              label: '删除任务',
+              icon: Icons.delete_outline,
+              value: 'delete',
+              isDangerous: true,
+            ),
+          ],
+        ),
+      ],
+    );
+
+    if (result == null) return;
+
+    switch (result) {
+      case 'edit':
+        widget.onEditTask?.call(widget.task);
+        break;
+      case 'priority_high':
+        widget.onSetPriority?.call(widget.task, TaskPriority.high);
+        break;
+      case 'priority_medium':
+        widget.onSetPriority?.call(widget.task, TaskPriority.medium);
+        break;
+      case 'priority_low':
+        widget.onSetPriority?.call(widget.task, TaskPriority.low);
+        break;
+      case 'status_pending':
+        widget.onSetStatus?.call(widget.task, TaskStatus.pending);
+        break;
+      case 'status_in_progress':
+        widget.onSetStatus?.call(widget.task, TaskStatus.inProgress);
+        break;
+      case 'status_completed':
+        widget.onSetStatus?.call(widget.task, TaskStatus.completed);
+        break;
+      case 'delete':
+        widget.onDeleteTask?.call(widget.task);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isCompleted = widget.task.status == TaskStatus.completed;
     final hasSubtasks = widget.subtasks.isNotEmpty;
     final isSubtask = widget.task.parentTaskId != null;
@@ -136,31 +247,34 @@ class _TaskItemState extends State<TaskItem> {
           onExit: (_) => setState(() => _isHovered = false),
           child: GestureDetector(
             onTap: () => widget.onTaskTap?.call(widget.task),
+            onSecondaryTapDown: (details) {
+              _showContextMenu(context, details.globalPosition);
+            },
             child: Container(
               constraints: const BoxConstraints(minHeight: 48),
               margin: EdgeInsets.only(
-                top: 1, // Reserve space for hover transform (-1px upward)
+                top: 1,
                 bottom: 6,
                 left: isSubtask ? 32.0 : 0,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: widget.isSelected
-                    ? const Color(0xFFEEF2FF) // primary-light
-                    : AppTheme.surfaceColor,
+                    ? colors.primaryLight
+                    : colors.surface,
                 border: Border.all(
                   color: widget.isSelected
-                      ? AppTheme.primaryColor
+                      ? colors.primary
                       : _isHovered
-                          ? AppTheme.primaryColor
-                          : AppTheme.dividerColor,
+                          ? colors.primary
+                          : colors.divider,
                   width: 1,
                 ),
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: widget.isSelected
                     ? [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                          color: colors.primary.withValues(alpha: 0.15),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -168,7 +282,7 @@ class _TaskItemState extends State<TaskItem> {
                     : _isHovered
                         ? [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: colors.shadowLight,
                               blurRadius: 2,
                               offset: const Offset(0, 1),
                             ),
@@ -190,7 +304,7 @@ class _TaskItemState extends State<TaskItem> {
                         height: 18,
                         margin: const EdgeInsets.only(right: 6),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                          color: colors.primary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Icon(
@@ -198,7 +312,7 @@ class _TaskItemState extends State<TaskItem> {
                               ? Icons.expand_more
                               : Icons.chevron_right,
                           size: 14,
-                          color: AppTheme.primaryColor,
+                          color: colors.primary,
                         ),
                       ),
                     ),
@@ -212,12 +326,12 @@ class _TaskItemState extends State<TaskItem> {
                       margin: const EdgeInsets.only(right: 10),
                       decoration: BoxDecoration(
                         color: isCompleted
-                            ? AppTheme.successColor
+                            ? colors.success
                             : Colors.transparent,
                         border: Border.all(
                           color: isCompleted
-                              ? AppTheme.successColor
-                              : AppTheme.dividerColor,
+                              ? colors.success
+                              : colors.checkboxBorder,
                           width: 2,
                         ),
                         borderRadius: BorderRadius.circular(4),
@@ -256,12 +370,12 @@ class _TaskItemState extends State<TaskItem> {
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: isCompleted
-                                ? AppTheme.textHint
-                                : AppTheme.textPrimary,
+                                ? colors.textHint
+                                : colors.textPrimary,
                             decoration: isCompleted
                                 ? TextDecoration.lineThrough
                                 : null,
-                            decorationColor: AppTheme.textHint,
+                            decorationColor: colors.textHint,
                             height: 1.3,
                           ),
                           maxLines: 1,
@@ -343,7 +457,6 @@ class _TaskItemState extends State<TaskItem> {
                   ),
 
                   // Action buttons - visible on hover
-                  // Fixed height only for subtasks (36) vs parent tasks (64 with add button)
                   SizedBox(
                     width: isTopLevel ? 64 : 36,
                     height: 28,
@@ -355,15 +468,13 @@ class _TaskItemState extends State<TaskItem> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            // Edit / add subtask button
                             if (isTopLevel)
                               _ActionButton(
                                 icon: Icons.add,
-                                tooltip: 'Add subtask',
+                                tooltip: '添加子任务',
                                 onTap: widget.onAddSubtask,
                               ),
 
-                            // Focus button - play icon in purple circle (only for subtasks)
                             if (!isTopLevel && !isCompleted)
                               _PlayButton(
                                 onTap: () => widget.onTaskFocus?.call(widget.task),
@@ -383,10 +494,10 @@ class _TaskItemState extends State<TaskItem> {
         if (hasSubtasks && _isExpanded)
           Container(
             margin: const EdgeInsets.only(left: 0),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
                 left: BorderSide(
-                  color: Color(0xFFE0E7FF), // primary-50
+                  color: colors.subtaskBorder,
                   width: 2,
                 ),
               ),
@@ -414,6 +525,10 @@ class _TaskItemState extends State<TaskItem> {
                     onTaskStatusChanged: widget.onTaskStatusChanged,
                     onTaskTap: widget.onTaskTap,
                     onTaskFocus: widget.onTaskFocus,
+                    onEditTask: widget.onEditTask,
+                    onDeleteTask: widget.onDeleteTask,
+                    onSetPriority: widget.onSetPriority,
+                    onSetStatus: widget.onSetStatus,
                   ),
                 );
               },
@@ -448,11 +563,12 @@ class _MetaItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final color = isOverdue
-        ? AppTheme.errorColor
+        ? colors.error
         : isPrimary
-            ? AppTheme.primaryColor
-            : AppTheme.textHint;
+            ? colors.primary
+            : colors.textHint;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -495,6 +611,8 @@ class _ActionButtonState extends State<_ActionButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -508,7 +626,7 @@ class _ActionButtonState extends State<_ActionButton> {
             height: 28,
             decoration: BoxDecoration(
               color: _isHovered
-                  ? const Color(0xFFEEF2FF)
+                  ? colors.primaryLight
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(6),
             ),
@@ -516,8 +634,8 @@ class _ActionButtonState extends State<_ActionButton> {
               widget.icon,
               size: 14,
               color: _isHovered
-                  ? AppTheme.primaryColor
-                  : AppTheme.textHint,
+                  ? colors.primary
+                  : colors.textHint,
             ),
           ),
         ),
@@ -541,6 +659,8 @@ class _PlayButtonState extends State<_PlayButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -548,19 +668,19 @@ class _PlayButtonState extends State<_PlayButton> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Tooltip(
-          message: 'Focus on this task',
+          message: '专注此任务',
           child: Container(
             width: 28,
             height: 28,
             decoration: BoxDecoration(
               color: _isHovered
-                  ? const Color(0xFF4F46E5)
-                  : AppTheme.primaryColor,
+                  ? colors.primaryHover
+                  : colors.primary,
               shape: BoxShape.circle,
               boxShadow: _isHovered
                   ? [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                        color: colors.primary.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),

@@ -17,7 +17,6 @@ class StatusTabs extends StatelessWidget {
     this.tasks = const [],
   });
 
-  /// Calculate counts for each status from the provided tasks
   Map<String, int> _calculateCounts() {
     int pending = 0;
     int inProgress = 0;
@@ -48,14 +47,15 @@ class StatusTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final counts = _calculateCounts();
 
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         border: Border(
           bottom: BorderSide(
-            color: AppTheme.dividerColor,
+            color: colors.divider,
             width: 1,
           ),
         ),
@@ -120,6 +120,7 @@ class _StatusTabState extends State<_StatusTab> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final bool isActive = widget.isSelected;
 
     return MouseRegion(
@@ -144,7 +145,7 @@ class _StatusTabState extends State<_StatusTab> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: isActive ? AppTheme.primaryColor : Colors.transparent,
+                color: isActive ? colors.primary : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -158,10 +159,10 @@ class _StatusTabState extends State<_StatusTab> {
                   fontSize: 13,
                   fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                   color: isActive
-                      ? AppTheme.primaryColor
+                      ? colors.primary
                       : _isHovered
-                          ? AppTheme.textPrimary
-                          : AppTheme.textSecondary,
+                          ? colors.textPrimary
+                          : colors.textSecondary,
                 ),
               ),
               const SizedBox(width: 6),
@@ -170,8 +171,8 @@ class _StatusTabState extends State<_StatusTab> {
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? const Color(0xFFEEF2FF) // primary-light
-                      : const Color(0xFFF1F5F9), // divider-light
+                      ? colors.primaryLight
+                      : colors.badgeBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -180,8 +181,8 @@ class _StatusTabState extends State<_StatusTab> {
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isActive
-                        ? AppTheme.primaryColor
-                        : AppTheme.textHint,
+                        ? colors.primary
+                        : colors.textHint,
                     height: 1.6,
                   ),
                 ),

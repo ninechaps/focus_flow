@@ -16,6 +16,8 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Scaffold(
       body: Row(
         children: [
@@ -28,7 +30,7 @@ class AppShell extends StatelessWidget {
               children: [
                 // Page content (full height, no constraints from title bar)
                 Container(
-                  color: AppTheme.backgroundColor,
+                  color: colors.background,
                   child: child,
                 ),
 

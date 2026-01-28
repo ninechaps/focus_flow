@@ -254,8 +254,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildLoginForm() {
+    final colors = context.appColors;
     return Container(
-      color: AppTheme.backgroundColor,
+      color: colors.background,
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppTheme.spacingXl),
@@ -275,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
                   Text(
                     'Sign in to continue to Focus Hut',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
+                          color: colors.textSecondary,
                         ),
                   ),
 
@@ -398,10 +399,10 @@ class _LoginPageState extends State<LoginPage> {
                   Container(
                     padding: const EdgeInsets.all(AppTheme.spacingSm),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                      color: colors.primary.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                       border: Border.all(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        color: colors.primary.withValues(alpha: 0.1),
                       ),
                     ),
                     child: Row(
@@ -409,14 +410,14 @@ class _LoginPageState extends State<LoginPage> {
                         Icon(
                           Icons.info_outline,
                           size: AppTheme.iconSizeSm,
-                          color: AppTheme.primaryColor,
+                          color: colors.primary,
                         ),
                         const SizedBox(width: AppTheme.spacingSm),
                         Expanded(
                           child: Text(
                             'Demo: admin / admin123',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.primaryColor,
+                                  color: colors.primary,
                                 ),
                           ),
                         ),

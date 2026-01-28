@@ -31,7 +31,6 @@ class TipsPanel extends StatelessWidget {
     this.onFocus,
   });
 
-  /// Get selected task object (including subtasks)
   Task? get _selectedTask {
     if (selectedTaskId == null) return null;
     for (final task in tasks) {
@@ -40,7 +39,6 @@ class TipsPanel extends StatelessWidget {
     return null;
   }
 
-  /// Get selected goal object
   Goal? get _selectedGoal {
     if (selectedGoalId == null) return null;
     try {
@@ -50,12 +48,10 @@ class TipsPanel extends StatelessWidget {
     }
   }
 
-  /// Get subtasks for a task
   List<Task> _getSubtasks(String taskId) {
     return tasks.where((t) => t.parentTaskId == taskId).toList();
   }
 
-  /// Format duration for display
   String _formatDuration(int seconds) {
     if (seconds == 0) {
       return '0m';
@@ -74,7 +70,6 @@ class TipsPanel extends StatelessWidget {
     }
   }
 
-  /// Format date for display
   String _formatDate(DateTime date) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -133,40 +128,42 @@ class TipsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return SizedBox(
       width: width,
       height: double.infinity,
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: colors.surface,
           border: Border(
             left: BorderSide(
-              color: AppTheme.dividerColor,
+              color: colors.divider,
               width: 1,
             ),
           ),
         ),
-        child: _buildContent(),
+        child: _buildContent(context),
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     if (selectedTaskId != null && _selectedTask != null) {
-      return _buildTaskDetails(_selectedTask!);
+      return _buildTaskDetails(context, _selectedTask!);
     } else if (selectedGoalId != null && _selectedGoal != null) {
-      return _buildGoalSummary(_selectedGoal!);
+      return _buildGoalSummary(context, _selectedGoal!);
     }
     return const SizedBox.shrink();
   }
 
-  Widget _buildTaskDetails(Task task) {
+  Widget _buildTaskDetails(BuildContext context, Task task) {
+    final colors = context.appColors;
     final subtasks = _getSubtasks(task.id);
     final completedSubtasks =
         subtasks.where((t) => t.status == TaskStatus.completed).length;
     final totalSubtasks = subtasks.length;
 
-    // Calculate total focus time including subtasks
     int totalFocusTime = task.focusDuration;
     for (final subtask in subtasks) {
       totalFocusTime += subtask.focusDuration;
@@ -177,7 +174,6 @@ class TipsPanel extends StatelessWidget {
 
     return Column(
       children: [
-        // Scrollable content
         Expanded(
           child: SingleChildScrollView(
             child: Column(
@@ -188,13 +184,12 @@ class TipsPanel extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                   decoration: BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: AppTheme.dividerColor, width: 1),
+                      bottom: BorderSide(color: colors.divider, width: 1),
                     ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Status badges
                       Row(
                         children: [
                           _StatusBadge(
@@ -209,20 +204,18 @@ class TipsPanel extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // Task title
                       Text(
                         task.title,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: colors.textPrimary,
                           height: 1.4,
                           decoration: task.status == TaskStatus.completed
                               ? TextDecoration.lineThrough
                               : null,
                         ),
                       ),
-                      // Description
                       if (task.description != null &&
                           task.description!.isNotEmpty) ...[
                         const SizedBox(height: 4),
@@ -230,7 +223,7 @@ class TipsPanel extends StatelessWidget {
                           task.description!,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: colors.textSecondary,
                             height: 1.5,
                           ),
                           maxLines: 3,
@@ -261,7 +254,7 @@ class TipsPanel extends StatelessWidget {
                     _DetailField(
                       label: '⏱ 已专注',
                       value: _formatDuration(totalFocusTime),
-                      valueColor: AppTheme.primaryColor,
+                      valueColor: colors.primary,
                     ),
                     _DetailField(
                       label: '📆 创建于',
@@ -282,7 +275,6 @@ class TipsPanel extends StatelessWidget {
                     ],
                   ),
 
-                  // ===== Subtask List Section =====
                   _DetailSection(
                     title: '子任务',
                     children: [
@@ -337,7 +329,6 @@ class TipsPanel extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              // Edit button
               Expanded(
                 child: _DetailButton(
                   label: '✏️ 编辑',
@@ -345,8 +336,7 @@ class TipsPanel extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              // Focus button - only for subtasks (tasks with parentTaskId != null)
-              if (task.parentTaskId != null) // Only show focus button for subtasks
+              if (task.parentTaskId != null)
                 Expanded(
                   child: _DetailButton(
                     label: '▶ 开始专注',
@@ -363,14 +353,14 @@ class TipsPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildGoalSummary(Goal goal) {
+  Widget _buildGoalSummary(BuildContext context, Goal goal) {
+    final colors = context.appColors;
     final goalTasks = tasks
         .where((t) => t.goalId == goal.id && t.parentTaskId == null)
         .toList();
     final completedTasks =
         goalTasks.where((t) => t.status == TaskStatus.completed).length;
 
-    // Calculate total focus time including subtasks
     int totalFocusTime = 0;
     for (final task in goalTasks) {
       totalFocusTime += task.focusDuration;
@@ -384,12 +374,11 @@ class TipsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: AppTheme.dividerColor, width: 1),
+                bottom: BorderSide(color: colors.divider, width: 1),
               ),
             ),
             child: Column(
@@ -397,15 +386,15 @@ class TipsPanel extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.flag, size: 20, color: AppTheme.primaryColor),
+                    Icon(Icons.flag, size: 20, color: colors.primary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         goal.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: colors.textPrimary,
                         ),
                       ),
                     ),
@@ -429,7 +418,7 @@ class TipsPanel extends StatelessWidget {
               _DetailField(
                 label: '⏱ 总专注',
                 value: _formatDuration(totalFocusTime),
-                valueColor: AppTheme.primaryColor,
+                valueColor: colors.primary,
               ),
             ],
           ),
@@ -445,7 +434,6 @@ class TipsPanel extends StatelessWidget {
               ],
             ),
 
-            // Task list
             _DetailSection(
               title: '任务 (${goalTasks.length})',
               children: [
@@ -477,7 +465,6 @@ class TipsPanel extends StatelessWidget {
 
 // ===== Sub-widgets =====
 
-/// Status badge (priority/status)
 class _StatusBadge extends StatelessWidget {
   final String label;
   final Color color;
@@ -507,7 +494,6 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-/// Detail section with title and children
 class _DetailSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
@@ -519,12 +505,14 @@ class _DetailSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: const Color(0xFFF1F5F9),
+            color: colors.sectionBorder,
             width: 1,
           ),
         ),
@@ -537,7 +525,7 @@ class _DetailSection extends StatelessWidget {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textHint,
+              color: colors.textHint,
               letterSpacing: 0.3,
             ),
           ),
@@ -549,7 +537,6 @@ class _DetailSection extends StatelessWidget {
   }
 }
 
-/// Detail field row: label on left, value on right
 class _DetailField extends StatelessWidget {
   final String label;
   final String value;
@@ -563,6 +550,8 @@ class _DetailField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -571,7 +560,7 @@ class _DetailField extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 12,
-              color: AppTheme.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
           const Spacer(),
@@ -580,7 +569,7 @@ class _DetailField extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: valueColor ?? AppTheme.textPrimary,
+              color: valueColor ?? colors.textPrimary,
             ),
           ),
         ],
@@ -589,7 +578,6 @@ class _DetailField extends StatelessWidget {
   }
 }
 
-/// Subtask progress widget with ring + bar
 class _SubtaskProgressWidget extends StatelessWidget {
   final int completed;
   final int total;
@@ -601,26 +589,26 @@ class _SubtaskProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final progress = total > 0 ? completed / total : 0.0;
     final percent = (progress * 100).toInt();
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: colors.progressBg,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          // Progress ring
           SizedBox(
             width: 48,
             height: 48,
             child: CustomPaint(
               painter: _ProgressRingPainter(
                 progress: progress,
-                backgroundColor: AppTheme.dividerColor,
-                progressColor: AppTheme.primaryColor,
+                backgroundColor: colors.divider,
+                progressColor: colors.primary,
                 strokeWidth: 4,
               ),
               child: Center(
@@ -629,14 +617,13 @@ class _SubtaskProgressWidget extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.primaryColor,
+                    color: colors.primary,
                   ),
                 ),
               ),
             ),
           ),
           const SizedBox(width: 16),
-          // Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,20 +632,19 @@ class _SubtaskProgressWidget extends StatelessWidget {
                   '已完成 $completed / $total 个子任务',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.textHint,
+                    color: colors.textHint,
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Progress bar
                 ClipRRect(
                   borderRadius: BorderRadius.circular(2),
                   child: LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: AppTheme.dividerColor,
+                    backgroundColor: colors.divider,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       progress >= 1.0
                           ? AppTheme.successColor
-                          : AppTheme.primaryColor,
+                          : colors.primary,
                     ),
                     minHeight: 4,
                   ),
@@ -672,7 +658,6 @@ class _SubtaskProgressWidget extends StatelessWidget {
   }
 }
 
-/// CustomPaint painter for progress ring
 class _ProgressRingPainter extends CustomPainter {
   final double progress;
   final Color backgroundColor;
@@ -691,14 +676,12 @@ class _ProgressRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
-    // Background circle
     final bgPaint = Paint()
       ..color = backgroundColor
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
     canvas.drawCircle(center, radius, bgPaint);
 
-    // Progress arc
     if (progress > 0) {
       final progressPaint = Paint()
         ..color = progressColor
@@ -708,7 +691,7 @@ class _ProgressRingPainter extends CustomPainter {
 
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
-        -math.pi / 2, // Start from top
+        -math.pi / 2,
         2 * math.pi * progress,
         false,
         progressPaint,
@@ -722,7 +705,6 @@ class _ProgressRingPainter extends CustomPainter {
   }
 }
 
-/// Mini subtask item for the detail panel
 class _SubtaskMiniItem extends StatelessWidget {
   final Task task;
   final Color priorityColor;
@@ -734,20 +716,20 @@ class _SubtaskMiniItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isDone = task.status == TaskStatus.completed;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          // Mini checkbox
           Container(
             width: 14,
             height: 14,
             decoration: BoxDecoration(
-              color: isDone ? AppTheme.successColor : Colors.transparent,
+              color: isDone ? colors.success : Colors.transparent,
               border: Border.all(
-                color: isDone ? AppTheme.successColor : AppTheme.dividerColor,
+                color: isDone ? colors.success : colors.checkboxBorder,
                 width: 1.5,
               ),
               borderRadius: BorderRadius.circular(3),
@@ -757,20 +739,18 @@ class _SubtaskMiniItem extends StatelessWidget {
                 : null,
           ),
           const SizedBox(width: 8),
-          // Title
           Expanded(
             child: Text(
               task.title,
               style: TextStyle(
                 fontSize: 12,
-                color: isDone ? AppTheme.textHint : AppTheme.textPrimary,
+                color: isDone ? colors.textHint : colors.textPrimary,
                 decoration: isDone ? TextDecoration.lineThrough : null,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Priority dot
           Container(
             width: 6,
             height: 6,
@@ -785,7 +765,6 @@ class _SubtaskMiniItem extends StatelessWidget {
   }
 }
 
-/// Bottom action button
 class _DetailButton extends StatefulWidget {
   final String label;
   final bool isPrimary;
@@ -806,6 +785,7 @@ class _DetailButtonState extends State<_DetailButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isDisabled = widget.onTap == null;
 
     return MouseRegion(
@@ -823,14 +803,14 @@ class _DetailButtonState extends State<_DetailButton> {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
             color: widget.isPrimary
-                ? (_isHovered ? const Color(0xFF4F46E5) : AppTheme.primaryColor)
+                ? (_isHovered ? colors.primaryHover : colors.primary)
                 : (_isHovered
-                    ? const Color(0xFFF1F5F9)
-                    : AppTheme.surfaceColor),
+                    ? colors.hoverBg
+                    : colors.surface),
             border: Border.all(
               color: widget.isPrimary
-                  ? AppTheme.primaryColor
-                  : AppTheme.dividerColor,
+                  ? colors.primary
+                  : colors.divider,
               width: 1,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -844,8 +824,8 @@ class _DetailButtonState extends State<_DetailButton> {
                 color: widget.isPrimary
                     ? Colors.white
                     : (isDisabled
-                        ? AppTheme.textHint
-                        : AppTheme.textSecondary),
+                        ? colors.textHint
+                        : colors.textSecondary),
               ),
             ),
           ),

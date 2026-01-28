@@ -182,13 +182,14 @@ class _SchedulePageState extends State<SchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
         final validTasks = _filterTasks(provider.tasks);
         final dateTaskMap = _buildDateTaskMap(validTasks);
 
         return Container(
-          color: AppTheme.backgroundColor,
+          color: colors.background,
           child: Row(
             children: [
               // Left: Calendar
@@ -196,7 +197,7 @@ class _SchedulePageState extends State<SchedulePage> {
                 flex: 3,
                 child: _buildCalendarPanel(dateTaskMap),
               ),
-              const VerticalDivider(width: 1, color: AppTheme.dividerColor),
+              VerticalDivider(width: 1, color: colors.divider),
               // Right: Task list
               Expanded(
                 flex: 2,
@@ -210,6 +211,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _buildCalendarPanel(Map<DateTime, List<Task>> dateTaskMap) {
+    final colors = context.appColors;
     final dates = _calendarDates(_currentMonth);
     final today = DateTime.now();
     final todayDate = DateTime(today.year, today.month, today.day);
@@ -217,18 +219,18 @@ class _SchedulePageState extends State<SchedulePage> {
     return Container(
       margin: const EdgeInsets.all(AppTheme.spacingXl),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         children: [
           // Month navigation
           _buildMonthNavigation(),
-          const Divider(height: 1, color: AppTheme.dividerColor),
+          Divider(height: 1, color: colors.divider),
           // Weekday header
           _buildWeekdayHeader(),
-          const Divider(height: 1, color: AppTheme.dividerColor),
+          Divider(height: 1, color: colors.divider),
           // Calendar grid
           Expanded(
             child: _buildCalendarGrid(dates, dateTaskMap, todayDate),
@@ -239,6 +241,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _buildMonthNavigation() {
+    final colors = context.appColors;
     final title =
         '${_monthNames[_currentMonth.month - 1]} ${_currentMonth.year}';
     return Padding(
@@ -261,10 +264,10 @@ class _SchedulePageState extends State<SchedulePage> {
           const SizedBox(width: AppTheme.spacingSm),
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppTheme.fontSizeLg,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(width: AppTheme.spacingSm),
@@ -287,16 +290,16 @@ class _SchedulePageState extends State<SchedulePage> {
                 vertical: AppTheme.spacingXs,
               ),
               minimumSize: Size.zero,
-              side: const BorderSide(color: AppTheme.dividerColor),
+              side: BorderSide(color: colors.divider),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),
               ),
             ),
-            child: const Text(
+            child: Text(
               'Today',
               style: TextStyle(
                 fontSize: AppTheme.fontSizeSm,
-                color: AppTheme.textSecondary,
+                color: colors.textSecondary,
               ),
             ),
           ),
@@ -306,6 +309,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _buildWeekdayHeader() {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMd,
@@ -317,10 +321,10 @@ class _SchedulePageState extends State<SchedulePage> {
             child: Center(
               child: Text(
                 day,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: AppTheme.fontSizeXs,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textHint,
+                  color: colors.textHint,
                 ),
               ),
             ),
@@ -362,6 +366,7 @@ class _SchedulePageState extends State<SchedulePage> {
     Map<DateTime, List<Task>> dateTaskMap,
     DateTime todayDate,
   ) {
+    final colors = context.appColors;
     final isToday = _isSameDay(date, todayDate);
     final isSelected = _isSameDay(date, _selectedDate);
     final isInMonth = _isCurrentMonth(date);
@@ -384,7 +389,7 @@ class _SchedulePageState extends State<SchedulePage> {
         margin: const EdgeInsets.all(AppTheme.spacingXs),
         decoration: BoxDecoration(
           color: isSelected && !isToday
-              ? AppTheme.primaryColor.shade50
+              ? colors.primaryLight
               : Colors.transparent,
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         ),
@@ -397,8 +402,8 @@ class _SchedulePageState extends State<SchedulePage> {
               height: 28,
               alignment: Alignment.center,
               decoration: isToday
-                  ? const BoxDecoration(
-                      color: AppTheme.primaryColor,
+                  ? BoxDecoration(
+                      color: colors.primary,
                       shape: BoxShape.circle,
                     )
                   : null,
@@ -412,8 +417,8 @@ class _SchedulePageState extends State<SchedulePage> {
                   color: isToday
                       ? Colors.white
                       : isInMonth
-                          ? AppTheme.textPrimary
-                          : AppTheme.textHint,
+                          ? colors.textPrimary
+                          : colors.textHint,
                 ),
               ),
             ),
@@ -442,14 +447,15 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _buildTaskListPanel(Map<DateTime, List<Task>> dateTaskMap) {
+    final colors = context.appColors;
     final tasksForDate = dateTaskMap[_selectedDate] ?? [];
 
     return Container(
       margin: const EdgeInsets.all(AppTheme.spacingXl),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -459,30 +465,30 @@ class _SchedulePageState extends State<SchedulePage> {
             padding: const EdgeInsets.all(AppTheme.spacingLg),
             child: Text(
               _formatSelectedDate(_selectedDate),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppTheme.fontSizeLg,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: colors.textPrimary,
               ),
             ),
           ),
-          const Divider(height: 1, color: AppTheme.dividerColor),
+          Divider(height: 1, color: colors.divider),
           // Task list
           Expanded(
             child: tasksForDate.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'No tasks for this day',
                       style: TextStyle(
                         fontSize: AppTheme.fontSizeMd,
-                        color: AppTheme.textHint,
+                        color: colors.textHint,
                       ),
                     ),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.all(AppTheme.spacingMd),
                     itemCount: tasksForDate.length,
-                    separatorBuilder: (_, _) =>
+                    separatorBuilder: (_, __) =>
                         const SizedBox(height: AppTheme.spacingSm),
                     itemBuilder: (context, index) {
                       return _buildTaskItem(tasksForDate[index]);
@@ -495,6 +501,7 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   Widget _buildTaskItem(Task task) {
+    final colors = context.appColors;
     final isCompleted = task.status == TaskStatus.completed;
 
     return Container(
@@ -503,7 +510,7 @@ class _SchedulePageState extends State<SchedulePage> {
         vertical: AppTheme.spacingSm,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
+        color: colors.background,
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
       ),
       child: Row(
@@ -525,8 +532,8 @@ class _SchedulePageState extends State<SchedulePage> {
               style: TextStyle(
                 fontSize: AppTheme.fontSizeMd,
                 color: isCompleted
-                    ? AppTheme.textHint
-                    : AppTheme.textPrimary,
+                    ? colors.textHint
+                    : colors.textPrimary,
                 decoration:
                     isCompleted ? TextDecoration.lineThrough : null,
               ),

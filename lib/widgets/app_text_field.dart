@@ -42,6 +42,8 @@ class AppTextField extends StatefulWidget {
 class _AppTextFieldState extends State<AppTextField> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 59),
       child: Column(
@@ -69,7 +71,7 @@ class _AppTextFieldState extends State<AppTextField> {
               prefixIcon: widget.prefixIcon,
               // 当没有 prefixIcon 时，用 suffixIcon 占位来保持高度一致，不占位宽度
               suffixIcon: widget.prefixIcon == null ?
-                SizedBox(width: 0, height: 40) : null,
+                const SizedBox(width: 0, height: 40) : null,
               prefixIconConstraints: const BoxConstraints(
                 minWidth: 40,
                 minHeight: 40,
@@ -88,7 +90,7 @@ class _AppTextFieldState extends State<AppTextField> {
             Text(
               widget.helper!,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondary,
+                color: colors.textSecondary,
               ),
             ),
           ],

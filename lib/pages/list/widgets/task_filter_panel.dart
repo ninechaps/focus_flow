@@ -108,15 +108,16 @@ class TaskFilterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final counts = _calculateCounts();
 
     return Container(
       width: width,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         border: Border(
           right: BorderSide(
-            color: AppTheme.dividerColor,
+            color: colors.divider,
             width: 1,
           ),
         ),
@@ -177,7 +178,7 @@ class TaskFilterPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
+          Divider(height: 1, color: colors.divider),
           const SizedBox(height: AppTheme.spacingMd),
           // Goals section
           _FilterSection(
@@ -205,7 +206,7 @@ class TaskFilterPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppTheme.spacingMd),
-          Divider(height: 1, color: AppTheme.dividerColor),
+          Divider(height: 1, color: colors.divider),
           const SizedBox(height: AppTheme.spacingMd),
           // Tags section
           _FilterSection(
@@ -253,6 +254,7 @@ class _FilterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingMd),
       child: Column(
@@ -262,10 +264,10 @@ class _FilterSection extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: AppTheme.fontSizeXs,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textSecondary,
+                  color: colors.textSecondary,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -306,6 +308,7 @@ class _TimeFilterItemState extends State<_TimeFilterItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isHighlighted = widget.isSelected || _isHovered;
 
     return MouseRegion(
@@ -324,9 +327,9 @@ class _TimeFilterItemState extends State<_TimeFilterItem> {
           ),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? AppTheme.primaryColor.withValues(alpha: 0.08)
+                ? colors.primary.withValues(alpha: 0.08)
                 : _isHovered
-                    ? AppTheme.primaryColor.withValues(alpha: 0.04)
+                    ? colors.primary.withValues(alpha: 0.04)
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           ),
@@ -336,8 +339,8 @@ class _TimeFilterItemState extends State<_TimeFilterItem> {
                 widget.icon,
                 size: AppTheme.iconSizeSm,
                 color: isHighlighted
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondary,
+                    ? colors.primary
+                    : colors.textSecondary,
               ),
               const SizedBox(width: AppTheme.spacingSm),
               Expanded(
@@ -348,8 +351,8 @@ class _TimeFilterItemState extends State<_TimeFilterItem> {
                     fontWeight:
                         widget.isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isHighlighted
-                        ? AppTheme.primaryColor
-                        : AppTheme.textPrimary,
+                        ? colors.primary
+                        : colors.textPrimary,
                   ),
                 ),
               ),
@@ -359,8 +362,8 @@ class _TimeFilterItemState extends State<_TimeFilterItem> {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: widget.isSelected
-                        ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                        : AppTheme.dividerColor.withValues(alpha: 0.8),
+                        ? colors.primary.withValues(alpha: 0.15)
+                        : colors.divider.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -369,8 +372,8 @@ class _TimeFilterItemState extends State<_TimeFilterItem> {
                       fontSize: AppTheme.fontSizeXs - 1,
                       fontWeight: FontWeight.w600,
                       color: widget.isSelected
-                          ? AppTheme.primaryColor
-                          : AppTheme.textSecondary,
+                          ? colors.primary
+                          : colors.textSecondary,
                     ),
                   ),
                 ),
@@ -413,6 +416,7 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isHighlighted = widget.isSelected || _isHovered;
 
     return MouseRegion(
@@ -461,9 +465,9 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
           ),
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? AppTheme.primaryColor.withValues(alpha: 0.08)
+                ? colors.primary.withValues(alpha: 0.08)
                 : _isHovered
-                    ? AppTheme.primaryColor.withValues(alpha: 0.04)
+                    ? colors.primary.withValues(alpha: 0.04)
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           ),
@@ -473,8 +477,8 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
                 widget.isSelected ? Icons.flag : Icons.flag_outlined,
                 size: AppTheme.iconSizeSm,
                 color: isHighlighted
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondary,
+                    ? colors.primary
+                    : colors.textSecondary,
               ),
               const SizedBox(width: AppTheme.spacingSm),
               Expanded(
@@ -488,8 +492,8 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
                         fontWeight:
                             widget.isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isHighlighted
-                            ? AppTheme.primaryColor
-                            : AppTheme.textPrimary,
+                            ? colors.primary
+                            : colors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -498,7 +502,7 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
                       'Due ${_formatDate(widget.goal.dueDate)}',
                       style: TextStyle(
                         fontSize: AppTheme.fontSizeXs - 1,
-                        color: AppTheme.textHint,
+                        color: colors.textHint,
                       ),
                     ),
                   ],
@@ -542,6 +546,7 @@ class _TagFilterItemState extends State<_TagFilterItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final tagColor = _parseColor(widget.tag.color);
     final isHighlighted = widget.isSelected || _isHovered;
 
@@ -615,7 +620,7 @@ class _TagFilterItemState extends State<_TagFilterItem> {
                     fontSize: AppTheme.fontSizeSm,
                     fontWeight:
                         widget.isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isHighlighted ? tagColor : AppTheme.textPrimary,
+                    color: isHighlighted ? tagColor : colors.textPrimary,
                   ),
                 ),
               ),

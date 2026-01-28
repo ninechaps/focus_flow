@@ -10,6 +10,8 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.currentUser;
@@ -27,7 +29,7 @@ class ProfilePage extends StatelessWidget {
               Text(
                 'Manage your personal information',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
+                      color: colors.textSecondary,
                     ),
               ),
               const SizedBox(height: AppTheme.spacingXl),
@@ -37,9 +39,9 @@ class ProfilePage extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 400),
                     padding: const EdgeInsets.all(AppTheme.spacingXl),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                      border: Border.all(color: AppTheme.dividerColor),
+                      border: Border.all(color: colors.divider),
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -80,7 +82,7 @@ class ProfilePage extends StatelessWidget {
                         Text(
                           user?.email ?? 'No email',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondary,
+                                color: colors.textSecondary,
                               ),
                         ),
                         const SizedBox(height: AppTheme.spacingLg),
@@ -89,7 +91,7 @@ class ProfilePage extends StatelessWidget {
                           Text(
                             'Last login: ${_formatDateTime(user!.lastLoginTime!)}',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppTheme.textHint,
+                                  color: colors.textHint,
                                 ),
                           ),
                       ],

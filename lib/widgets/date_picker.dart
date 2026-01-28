@@ -5,49 +5,6 @@ import '../theme/app_theme.dart';
 /// DatePicker - 专业日期选择器
 /// ============================================================================
 
-class _DatePickerColors {
-  static const Color primary = Color(0xFF6366F1); // Indigo-500
-  static const Color textPrimary = AppTheme.textPrimary;
-  static const Color textSecondary = AppTheme.textSecondary;
-  static const Color border = AppTheme.dividerColor;
-  static const Color background = AppTheme.backgroundColor;
-}
-
-class _DatePickerTypography {
-  static const TextStyle labelStyle = TextStyle(
-    fontSize: 12.5,
-    fontWeight: FontWeight.w500,
-    color: _DatePickerColors.textSecondary,
-    height: 1.2,
-  );
-
-  static const TextStyle inputStyle = TextStyle(
-    fontSize: 13.5,
-    fontWeight: FontWeight.normal,
-    color: _DatePickerColors.textPrimary,
-    height: 1.4,
-  );
-
-  static const TextStyle hintStyle = TextStyle(
-    fontSize: 13.5,
-    fontWeight: FontWeight.normal,
-    color: AppTheme.textHint,
-    height: 1.4,
-  );
-
-  static const TextStyle helperStyle = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.normal,
-    color: _DatePickerColors.textSecondary,
-    height: 1.3,
-  );
-}
-
-class _DatePickerSpacing {
-  static const double sm = AppTheme.spacingSm; // 6.0
-  static const double md = AppTheme.spacingMd; // 10.0
-}
-
 /// 专业日期选择器组件
 class DatePicker extends StatelessWidget {
   final String label;
@@ -77,12 +34,21 @@ class DatePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final hasDate = selectedDate != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: _DatePickerTypography.labelStyle),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w500,
+            color: colors.textSecondary,
+            height: 1.2,
+          ),
+        ),
         const SizedBox(height: 4),
         MouseRegion(
           cursor: SystemMouseCursors.click,
@@ -99,21 +65,19 @@ class DatePicker extends StatelessWidget {
               }
             },
             child: Container(
-              height: 38, // 统一高度标准
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14, // 14px
-              ),
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                 border: Border.all(
-                  color: hasDate ? _DatePickerColors.primary : _DatePickerColors.border,
+                  color: hasDate ? colors.primary : colors.divider,
                   width: hasDate ? 1.5 : 1,
                 ),
-                color: _DatePickerColors.background,
+                color: colors.background,
                 boxShadow: hasDate
                     ? [
                         BoxShadow(
-                          color: _DatePickerColors.primary.withAlpha(8),
+                          color: colors.primary.withAlpha(8),
                           blurRadius: 4,
                           spreadRadius: 0,
                         ),
@@ -127,23 +91,26 @@ class DatePicker extends StatelessWidget {
                     Icons.calendar_today,
                     size: 14,
                     color: hasDate
-                        ? _DatePickerColors.primary
-                        : _DatePickerColors.textSecondary,
+                        ? colors.primary
+                        : colors.textSecondary,
                   ),
-                  const SizedBox(width: _DatePickerSpacing.md),
+                  const SizedBox(width: AppTheme.spacingMd),
                   Expanded(
                     child: Text(
                       hasDate
                           ? (formatDate?.call(selectedDate!) ??
                               _defaultFormat(selectedDate!))
-                          : 'Select date',
-                      style: hasDate
-                          ? _DatePickerTypography.inputStyle
-                          : _DatePickerTypography.hintStyle,
+                          : '选择日期',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.normal,
+                        color: hasDate ? colors.textPrimary : colors.textHint,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                   if (hasDate && onClear != null) ...[
-                    const SizedBox(width: _DatePickerSpacing.sm),
+                    const SizedBox(width: AppTheme.spacingSm),
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
@@ -154,7 +121,7 @@ class DatePicker extends StatelessWidget {
                         child: Icon(
                           Icons.close,
                           size: 12,
-                          color: _DatePickerColors.textSecondary,
+                          color: colors.textSecondary,
                         ),
                       ),
                     ),
@@ -166,7 +133,15 @@ class DatePicker extends StatelessWidget {
         ),
         if (helper != null) ...[
           const SizedBox(height: 4),
-          Text(helper!, style: _DatePickerTypography.helperStyle),
+          Text(
+            helper!,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.normal,
+              color: colors.textSecondary,
+              height: 1.3,
+            ),
+          ),
         ],
       ],
     );
@@ -200,7 +175,6 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
     _selectedHour = _selectedDate.hour;
     _selectedMinute = _selectedDate.minute;
 
-    // 确保分钟是 0 或 30（四舍五入）
     if (_selectedMinute < 15) {
       _selectedMinute = 0;
     } else if (_selectedMinute < 45) {
@@ -272,6 +246,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
@@ -279,23 +254,22 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
     final monthName = monthNames[_displayedMonth.month - 1];
     final year = _displayedMonth.year;
 
-    // 计算该月的第一天是星期几和总天数
     final firstDay = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
     final lastDay = DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0);
     final daysInMonth = lastDay.day;
-    final startingWeekday = firstDay.weekday == 7 ? 0 : firstDay.weekday; // 0=Sunday
+    final startingWeekday = firstDay.weekday == 7 ? 0 : firstDay.weekday;
 
     return Dialog(
-      backgroundColor: _DatePickerColors.background,
+      backgroundColor: colors.background,
       insetPadding: const EdgeInsets.all(16),
       child: Container(
         width: 360,
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
           boxShadow: [
             BoxShadow(
-              color: const Color(0x1A000000),
+              color: colors.shadow.withValues(alpha: 0.2),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -310,15 +284,14 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Year dropdown
                   Row(
                     children: [
                       Text(
                         year.toString(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: _DatePickerColors.textPrimary,
+                          color: colors.textPrimary,
                         ),
                       ),
                       MouseRegion(
@@ -347,22 +320,20 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                           child: Icon(
                             Icons.expand_more,
                             size: 18,
-                            color: _DatePickerColors.textSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  // Month display
                   Text(
                     monthName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: _DatePickerColors.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
-                  // Month navigation arrows
                   Row(
                     children: [
                       MouseRegion(
@@ -377,7 +348,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                           child: Icon(
                             Icons.chevron_left,
                             size: 20,
-                            color: _DatePickerColors.textSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
@@ -394,7 +365,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                           child: Icon(
                             Icons.chevron_right,
                             size: 20,
-                            color: _DatePickerColors.textSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
@@ -418,7 +389,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: _DatePickerColors.textSecondary,
+                                color: colors.textSecondary,
                               ),
                             ),
                           ),
@@ -449,6 +420,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                               day,
                               startingWeekday,
                               daysInMonth,
+                              colors,
                             ),
                           ),
                       ],
@@ -462,7 +434,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
             // Time selector row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildTimeSelector(),
+              child: _buildTimeSelector(colors),
             ),
 
             const SizedBox(height: 16),
@@ -478,8 +450,8 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                       child: OutlinedButton(
                         onPressed: _clear,
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: _DatePickerColors.border,
+                          side: BorderSide(
+                            color: colors.divider,
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius:
@@ -491,7 +463,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: _DatePickerColors.textPrimary,
+                            color: colors.textPrimary,
                           ),
                         ),
                       ),
@@ -504,7 +476,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                       child: FilledButton(
                         onPressed: _confirm,
                         style: FilledButton.styleFrom(
-                          backgroundColor: _DatePickerColors.primary,
+                          backgroundColor: colors.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius:
                                 BorderRadius.circular(AppTheme.radiusMd),
@@ -530,8 +502,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
     );
   }
 
-  Widget _buildTimeSelector() {
-    // Generate time options (every 30 minutes)
+  Widget _buildTimeSelector(AppColors colors) {
     final timeOptions = <String>[];
     for (int hour = 0; hour < 24; hour++) {
       for (int minute in [0, 30]) {
@@ -549,10 +520,10 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
       children: [
         Text(
           '选择时间: $currentTime',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,
-            color: _DatePickerColors.textPrimary,
+            color: colors.textPrimary,
           ),
         ),
         MouseRegion(
@@ -576,7 +547,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
             child: Icon(
               Icons.chevron_right,
               size: 18,
-              color: _DatePickerColors.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
         ),
@@ -589,6 +560,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
     int day,
     int startingWeekday,
     int daysInMonth,
+    AppColors colors,
   ) {
     final cellIndex = week * 7 + day;
     final dayOfMonth = cellIndex - startingWeekday + 1;
@@ -606,7 +578,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
         onTap: () => _selectDate(dayOfMonth),
         child: Container(
           decoration: BoxDecoration(
-            color: isSelected ? _DatePickerColors.primary : Colors.transparent,
+            color: isSelected ? colors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
           ),
           child: Stack(
@@ -619,10 +591,9 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                   fontWeight: FontWeight.w500,
                   color: isSelected
                       ? Colors.white
-                      : _DatePickerColors.textPrimary,
+                      : colors.textPrimary,
                 ),
               ),
-              // 今天的红点
               if (isToday && !isSelected)
                 Positioned(
                   bottom: 4,

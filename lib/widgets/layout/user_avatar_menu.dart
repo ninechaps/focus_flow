@@ -10,6 +10,8 @@ class UserAvatarMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.currentUser;
@@ -25,22 +27,26 @@ class UserAvatarMenu extends StatelessWidget {
           onSelected: (value) => _handleMenuSelection(context, value),
           itemBuilder: (context) => [
             _buildMenuItem(
+              context: context,
               value: 'profile',
               icon: Icons.person_outline,
               label: 'Profile',
             ),
             _buildMenuItem(
+              context: context,
               value: 'settings',
               icon: Icons.settings_outlined,
               label: 'Settings',
             ),
             _buildMenuItem(
+              context: context,
               value: 'statistics',
               icon: Icons.bar_chart_outlined,
               label: 'Statistics',
             ),
             const PopupMenuDivider(),
             _buildMenuItem(
+              context: context,
               value: 'logout',
               icon: Icons.logout,
               label: 'Logout',
@@ -79,7 +85,7 @@ class UserAvatarMenu extends StatelessWidget {
                   username,
                   style: TextStyle(
                     fontSize: AppTheme.fontSizeXs,
-                    color: AppTheme.textSecondary,
+                    color: colors.textSecondary,
                   ),
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -94,12 +100,14 @@ class UserAvatarMenu extends StatelessWidget {
   }
 
   PopupMenuItem<String> _buildMenuItem({
+    required BuildContext context,
     required String value,
     required IconData icon,
     required String label,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? AppTheme.errorColor : AppTheme.textPrimary;
+    final colors = context.appColors;
+    final color = isDestructive ? colors.error : colors.textPrimary;
 
     return PopupMenuItem<String>(
       value: value,

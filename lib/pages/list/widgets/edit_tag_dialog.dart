@@ -68,6 +68,7 @@ class _EditTagDialogState extends State<EditTagDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return DialogBox(
       title: 'Edit Tag',
       onClose: () => Navigator.pop(context),
@@ -105,7 +106,7 @@ class _EditTagDialogState extends State<EditTagDialog> {
                   style: TextStyle(
                     fontSize: AppTheme.fontSizeSm,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),

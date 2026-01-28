@@ -23,13 +23,15 @@ class Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Container(
       width: width,
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         border: Border(
           right: BorderSide(
-            color: AppTheme.dividerColor,
+            color: colors.divider,
             width: 1,
           ),
         ),
@@ -67,14 +69,9 @@ class _SidebarContent extends StatelessWidget {
   });
 
   /// Calculate task counts for schedule filters
-  /// Only counts incomplete parent tasks (top-level, not completed)
   Map<String, int> _calculateCounts() {
-    // Only count incomplete parent tasks
     final incompleteTasks = taskProvider.tasks.where((t) =>
         t.parentTaskId == null && t.status != TaskStatus.completed).toList();
-
-    // All incomplete parent tasks show in every time view
-    // (today/week/month all include all unfinished tasks)
     final totalIncomplete = incompleteTasks.length;
 
     return {
@@ -97,7 +94,6 @@ class _SidebarContent extends StatelessWidget {
     final currentLocation = GoRouterState.of(context).uri.path;
     final counts = _calculateCounts();
 
-    // Count total incomplete parent tasks for nav badge
     final totalTasks = taskProvider.tasks
         .where((t) => t.parentTaskId == null && t.status != TaskStatus.completed)
         .length;
@@ -251,7 +247,7 @@ class _SidebarContent extends StatelessWidget {
     );
   }
 
-  // ===== Action handlers (moved from ListPage) =====
+  // ===== Action handlers =====
 
   Future<void> _handleAddGoal(BuildContext context) async {
     final goal = await showAddGoalDialog(context);
@@ -404,6 +400,8 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Text(
@@ -411,7 +409,7 @@ class _SectionTitle extends StatelessWidget {
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w600,
-          color: AppTheme.textHint,
+          color: colors.textHint,
           letterSpacing: 0.5,
         ),
       ),
@@ -433,6 +431,8 @@ class _UserInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: Row(
@@ -447,7 +447,7 @@ class _UserInfoSection extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor,
+                  colors.primary,
                   AppTheme.primaryColor.shade400,
                 ],
               ),
@@ -471,10 +471,10 @@ class _UserInfoSection extends StatelessWidget {
               children: [
                 Text(
                   username,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: colors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -483,7 +483,7 @@ class _UserInfoSection extends StatelessWidget {
                   email,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.textHint,
+                    color: colors.textHint,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -524,6 +524,7 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isHighlighted = widget.isActive || _isHovered;
 
     return MouseRegion(
@@ -537,9 +538,9 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
           decoration: BoxDecoration(
             color: widget.isActive
-                ? const Color(0xFFEEF2FF) // primary-light
+                ? colors.primaryLight
                 : _isHovered
-                    ? const Color(0xFFF1F5F9) // divider-light
+                    ? colors.hoverBg
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
@@ -551,10 +552,10 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                     : widget.icon,
                 size: 16,
                 color: widget.isActive
-                    ? AppTheme.primaryColor
+                    ? colors.primary
                     : isHighlighted
-                        ? AppTheme.textPrimary
-                        : AppTheme.textSecondary,
+                        ? colors.textPrimary
+                        : colors.textSecondary,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -564,10 +565,10 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                     fontSize: 13,
                     fontWeight: widget.isActive ? FontWeight.w500 : FontWeight.w400,
                     color: widget.isActive
-                        ? AppTheme.primaryColor
+                        ? colors.primary
                         : isHighlighted
-                            ? AppTheme.textPrimary
-                            : AppTheme.textSecondary,
+                            ? colors.textPrimary
+                            : colors.textSecondary,
                   ),
                 ),
               ),
@@ -576,8 +577,8 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
                     color: widget.isActive
-                        ? const Color(0xFFE0E7FF) // primary-50
-                        : const Color(0xFFF1F5F9), // divider-light
+                        ? colors.activeBadgeBg
+                        : colors.badgeBg,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -586,8 +587,8 @@ class _SidebarNavItemState extends State<_SidebarNavItem> {
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: widget.isActive
-                          ? AppTheme.primaryColor
-                          : AppTheme.textHint,
+                          ? colors.primary
+                          : colors.textHint,
                     ),
                   ),
                 ),
@@ -629,7 +630,6 @@ class _GoalsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Colors for goal dots
     final dotColors = [
       AppTheme.primaryColor,
       AppTheme.successColor,
@@ -654,7 +654,6 @@ class _GoalsSection extends StatelessWidget {
             onEdit: () => onEditGoal(goals[i]),
             onDelete: () => onDeleteGoal(goals[i].id),
           ),
-        // Add goal button
         _AddButton(
           label: '+ 新建目标',
           onTap: onAddGoal,
@@ -693,6 +692,8 @@ class _GoalItemState extends State<_GoalItem> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -707,12 +708,12 @@ class _GoalItemState extends State<_GoalItem> {
               ContextMenuGroup(
                 items: [
                   const ContextMenuItem(
-                    label: 'Edit',
+                    label: '编辑',
                     icon: Icons.edit_outlined,
                     value: 'edit',
                   ),
                   const ContextMenuItem(
-                    label: 'Delete',
+                    label: '删除',
                     icon: Icons.delete_outline,
                     value: 'delete',
                     isDangerous: true,
@@ -732,9 +733,9 @@ class _GoalItemState extends State<_GoalItem> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: widget.isActive
-                ? const Color(0xFFEEF2FF)
+                ? colors.primaryLight
                 : _isHovered
-                    ? const Color(0xFFF1F5F9)
+                    ? colors.hoverBg
                     : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
@@ -755,8 +756,8 @@ class _GoalItemState extends State<_GoalItem> {
                   style: TextStyle(
                     fontSize: 13,
                     color: widget.isActive
-                        ? AppTheme.primaryColor
-                        : AppTheme.textSecondary,
+                        ? colors.primary
+                        : colors.textSecondary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -766,7 +767,7 @@ class _GoalItemState extends State<_GoalItem> {
                 widget.formattedDate,
                 style: TextStyle(
                   fontSize: 10,
-                  color: AppTheme.textHint,
+                  color: colors.textHint,
                 ),
               ),
             ],
@@ -862,6 +863,7 @@ class _TagChipState extends State<_TagChip> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final tagColor = _parseColor(widget.tag.color);
 
     return MouseRegion(
@@ -878,12 +880,12 @@ class _TagChipState extends State<_TagChip> {
               ContextMenuGroup(
                 items: [
                   const ContextMenuItem(
-                    label: 'Edit',
+                    label: '编辑',
                     icon: Icons.edit_outlined,
                     value: 'edit',
                   ),
                   const ContextMenuItem(
-                    label: 'Delete',
+                    label: '删除',
                     icon: Icons.delete_outline,
                     value: 'delete',
                     isDangerous: true,
@@ -902,8 +904,8 @@ class _TagChipState extends State<_TagChip> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
           decoration: BoxDecoration(
             color: widget.isActive || _isHovered
-                ? const Color(0xFFEEF2FF)
-                : const Color(0xFFF1F5F9),
+                ? colors.primaryLight
+                : colors.badgeBg,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -923,8 +925,8 @@ class _TagChipState extends State<_TagChip> {
                 style: TextStyle(
                   fontSize: 11,
                   color: widget.isActive
-                      ? AppTheme.primaryColor
-                      : AppTheme.textSecondary,
+                      ? colors.primary
+                      : colors.textSecondary,
                 ),
               ),
             ],
@@ -954,6 +956,8 @@ class _AddButtonState extends State<_AddButton> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -963,14 +967,14 @@ class _AddButtonState extends State<_AddButton> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: _isHovered ? const Color(0xFFF1F5F9) : Colors.transparent,
+            color: _isHovered ? colors.hoverBg : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             widget.label,
             style: TextStyle(
               fontSize: 12,
-              color: _isHovered ? AppTheme.primaryColor : AppTheme.textHint,
+              color: _isHovered ? colors.primary : colors.textHint,
             ),
           ),
         ),

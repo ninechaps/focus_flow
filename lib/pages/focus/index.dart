@@ -65,6 +65,7 @@ class _FocusPageState extends State<FocusPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Consumer<FocusProvider>(
       builder: (context, focusProvider, child) {
         final task = focusProvider.currentTask;
@@ -76,7 +77,7 @@ class _FocusPageState extends State<FocusPage> {
         }
 
         return Scaffold(
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: colors.background,
           body: SafeArea(
             child: Column(
               children: [
@@ -220,6 +221,7 @@ class _FocusHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingMd,
@@ -232,10 +234,10 @@ class _FocusHeader extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, size: 20),
             tooltip: 'Back to list',
             style: IconButton.styleFrom(
-              backgroundColor: AppTheme.surfaceColor,
+              backgroundColor: colors.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: AppTheme.dividerColor),
+                side: BorderSide(color: colors.divider),
               ),
             ),
           ),
@@ -245,7 +247,7 @@ class _FocusHeader extends StatelessWidget {
             style: TextStyle(
               fontSize: AppTheme.fontSizeMd,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondary,
+              color: colors.textSecondary,
             ),
           ),
           const Spacer(),
@@ -281,6 +283,7 @@ class _TaskHierarchyDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final priorityColor = _getPriorityColor(task.priority);
     final hasGoal = goal != null;
     final hasParent = parentTask != null;
@@ -301,7 +304,7 @@ class _TaskHierarchyDisplay extends StatelessWidget {
                 ].join(' / '),
                 style: TextStyle(
                   fontSize: AppTheme.fontSizeXs,
-                  color: AppTheme.textHint,
+                  color: colors.textHint,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -327,10 +330,10 @@ class _TaskHierarchyDisplay extends StatelessWidget {
               Flexible(
                 child: Text(
                   task.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: AppTheme.fontSizeLg,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: colors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -356,14 +359,15 @@ class _TimerModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Consumer<FocusProvider>(
       builder: (context, focusProvider, child) {
         return Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            border: Border.all(color: AppTheme.dividerColor),
+            border: Border.all(color: colors.divider),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -405,6 +409,7 @@ class _ModeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isEnabled = onTap != null;
     return MouseRegion(
       cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -414,9 +419,9 @@ class _ModeButton extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : (isEnabled ? Colors.transparent : AppTheme.surfaceColor.withValues(alpha: 0.5)),
+            color: isSelected ? colors.primary : (isEnabled ? Colors.transparent : colors.surface.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-            border: isEnabled ? null : Border.all(color: AppTheme.dividerColor),
+            border: isEnabled ? null : Border.all(color: colors.divider),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -424,7 +429,7 @@ class _ModeButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 16,
-                color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+                color: isSelected ? (isEnabled ? Colors.white : colors.textHint) : (isEnabled ? colors.textSecondary : colors.textHint),
               ),
               const SizedBox(width: 6),
               Text(
@@ -432,7 +437,7 @@ class _ModeButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppTheme.fontSizeSm,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+                  color: isSelected ? (isEnabled ? Colors.white : colors.textHint) : (isEnabled ? colors.textSecondary : colors.textHint),
                 ),
               ),
             ],
@@ -461,8 +466,9 @@ class _TimerDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isCompleted = state == FocusState.completed;
-    final displayColor = isCompleted ? AppTheme.successColor : AppTheme.primaryColor;
+    final displayColor = isCompleted ? AppTheme.successColor : colors.primary;
     final isCountUp = timerMode == TimerMode.countUp;
 
     return SizedBox(
@@ -489,7 +495,7 @@ class _TimerDisplay extends StatelessWidget {
               painter: _ProgressArcPainter(
                 progress: progress,
                 color: displayColor,
-                backgroundColor: AppTheme.dividerColor,
+                backgroundColor: colors.divider,
                 isCountUp: isCountUp,
               ),
             ),
@@ -511,7 +517,7 @@ class _TimerDisplay extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isCompleted ? AppTheme.fontSizeXl : AppTheme.fontSizeDisplay,
                   fontWeight: FontWeight.w300,
-                  color: AppTheme.textPrimary,
+                  color: colors.textPrimary,
                   letterSpacing: 2,
                 ),
               ),
@@ -728,6 +734,7 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -738,15 +745,15 @@ class _ControlButton extends StatelessWidget {
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: isPrimary ? AppTheme.primaryColor : AppTheme.surfaceColor,
+              color: isPrimary ? colors.primary : colors.surface,
               shape: BoxShape.circle,
               border: isPrimary
                   ? null
-                  : Border.all(color: AppTheme.dividerColor, width: 1),
+                  : Border.all(color: colors.divider, width: 1),
               boxShadow: isPrimary
                   ? [
                       BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                        color: colors.primary.withValues(alpha: 0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -760,7 +767,7 @@ class _ControlButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(size / 2),
                 child: Icon(
                   icon,
-                  color: isPrimary ? Colors.white : AppTheme.textSecondary,
+                  color: isPrimary ? Colors.white : colors.textSecondary,
                   size: size * 0.4,
                 ),
               ),
@@ -773,7 +780,7 @@ class _ControlButton extends StatelessWidget {
           style: TextStyle(
             fontSize: AppTheme.fontSizeXs,
             fontWeight: FontWeight.w500,
-            color: AppTheme.textSecondary,
+            color: colors.textSecondary,
           ),
         ),
       ],
@@ -795,6 +802,7 @@ class _DurationSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Consumer<FocusProvider>(
       builder: (context, focusProvider, child) {
         return Container(
@@ -803,9 +811,9 @@ class _DurationSelector extends StatelessWidget {
             vertical: AppTheme.spacingSm,
           ),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: colors.surface,
             borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-            border: Border.all(color: AppTheme.dividerColor),
+            border: Border.all(color: colors.divider),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -813,7 +821,7 @@ class _DurationSelector extends StatelessWidget {
               Icon(
                 Icons.schedule,
                 size: 16,
-                color: AppTheme.textSecondary,
+                color: colors.textSecondary,
               ),
               const SizedBox(width: AppTheme.spacingSm),
               for (final minutes in _presets) ...[
@@ -846,6 +854,7 @@ class _DurationChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final isEnabled = onTap != null;
     return MouseRegion(
       cursor: isEnabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
@@ -856,13 +865,13 @@ class _DurationChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected 
-                ? AppTheme.primaryColor 
-                : (isEnabled ? AppTheme.surfaceColor : AppTheme.surfaceColor.withValues(alpha: 0.5)),
+                ? colors.primary 
+                : (isEnabled ? colors.surface : colors.surface.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(AppTheme.radiusSm),
             border: Border.all(
               color: isSelected 
-                  ? AppTheme.primaryColor 
-                  : (isEnabled ? AppTheme.dividerColor : AppTheme.dividerColor.withValues(alpha: 0.5)),
+                  ? colors.primary 
+                  : (isEnabled ? colors.divider : colors.divider.withValues(alpha: 0.5)),
               width: 1,
             ),
           ),
@@ -872,7 +881,7 @@ class _DurationChip extends StatelessWidget {
               Icon(
                 Icons.access_time,
                 size: 14,
-                color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+                color: isSelected ? (isEnabled ? Colors.white : colors.textHint) : (isEnabled ? colors.textSecondary : colors.textHint),
               ),
               const SizedBox(width: 4),
               Text(
@@ -880,7 +889,7 @@ class _DurationChip extends StatelessWidget {
                 style: TextStyle(
                   fontSize: AppTheme.fontSizeSm,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: isSelected ? (isEnabled ? Colors.white : AppTheme.textHint) : (isEnabled ? AppTheme.textSecondary : AppTheme.textHint),
+                  color: isSelected ? (isEnabled ? Colors.white : colors.textHint) : (isEnabled ? colors.textSecondary : colors.textHint),
                 ),
               ),
             ],
@@ -909,6 +918,7 @@ class _SessionInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppTheme.spacingXl),
       padding: const EdgeInsets.symmetric(
@@ -916,9 +926,9 @@ class _SessionInfo extends StatelessWidget {
         vertical: AppTheme.spacingSm,
       ),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        border: Border.all(color: AppTheme.dividerColor),
+        border: Border.all(color: colors.divider),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -931,7 +941,7 @@ class _SessionInfo extends StatelessWidget {
           Container(
             width: 1,
             height: 20,
-            color: AppTheme.dividerColor,
+            color: colors.divider,
           ),
           _InfoItem(
             icon: Icons.hourglass_full,
@@ -941,7 +951,7 @@ class _SessionInfo extends StatelessWidget {
           Container(
             width: 1,
             height: 20,
-            color: AppTheme.dividerColor,
+            color: colors.divider,
           ),
           _InfoItem(
             icon: Icons.check_circle_outline,
@@ -968,10 +978,11 @@ class _InfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppTheme.primaryColor),
+        Icon(icon, size: 14, color: colors.primary),
         const SizedBox(width: 4),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -981,15 +992,15 @@ class _InfoItem extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: AppTheme.fontSizeXs - 1,
-                color: AppTheme.textHint,
+                color: colors.textHint,
               ),
             ),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppTheme.fontSizeSm,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
+                color: colors.textPrimary,
               ),
             ),
           ],

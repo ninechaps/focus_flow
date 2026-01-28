@@ -59,6 +59,8 @@ class _AddTagDialogState extends State<AddTagDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return DialogBox(
       title: 'Create New Tag',
       onClose: () => Navigator.pop(context),
@@ -96,7 +98,7 @@ class _AddTagDialogState extends State<AddTagDialog> {
                   style: TextStyle(
                     fontSize: AppTheme.fontSizeSm,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
+                    color: colors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8), // 8px

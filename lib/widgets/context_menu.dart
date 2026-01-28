@@ -135,29 +135,31 @@ class _MenuItemsPanel<T> extends StatefulWidget {
 class _MenuItemsPanelState<T> extends State<_MenuItemsPanel<T>> {
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Material(
       color: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
         side: BorderSide(
-          color: AppTheme.dividerColor,
+          color: colors.divider,
           width: 0.5,
         ),
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: colors.surface,
           borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: colors.shadow,
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
           border: Border.all(
-            color: AppTheme.dividerColor,
+            color: colors.divider,
             width: 0.5,
           ),
         ),
@@ -171,7 +173,7 @@ class _MenuItemsPanelState<T> extends State<_MenuItemsPanel<T>> {
                 if (groupIndex > 0)
                   Container(
                     height: 0.5,
-                    color: AppTheme.dividerColor,
+                    color: colors.divider,
                     margin: const EdgeInsets.symmetric(vertical: 2),
                   ),
                 for (final item in widget.groups[groupIndex].items)
@@ -231,6 +233,8 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -250,7 +254,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
               onTap: widget.onTap,
               child: Container(
                 decoration: BoxDecoration(
-                  color: _getBackgroundColor(_isHovered),
+                  color: _getBackgroundColor(colors, _isHovered),
                   borderRadius: BorderRadius.zero,
                 ),
                 padding: const EdgeInsets.symmetric(
@@ -264,7 +268,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
                       Icon(
                         widget.item.icon,
                         size: AppTheme.iconSizeMd,
-                        color: _getIconColor(_isHovered),
+                        color: _getIconColor(colors, _isHovered),
                       ),
                       const SizedBox(width: 10),
                     },
@@ -273,7 +277,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
                         widget.item.label,
                         style: TextStyle(
                           fontSize: AppTheme.fontSizeSm,
-                          color: _getTextColor(_isHovered),
+                          color: _getTextColor(colors, _isHovered),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -285,7 +289,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
                           widget.item.shortcut!,
                           style: TextStyle(
                             fontSize: AppTheme.fontSizeXs,
-                            color: AppTheme.textHint,
+                            color: colors.textHint,
                             fontWeight: FontWeight.normal,
                           ),
                         )
@@ -293,7 +297,7 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
                         Icon(
                           Icons.chevron_right,
                           size: AppTheme.iconSizeMd,
-                          color: AppTheme.textHint,
+                          color: colors.textHint,
                         ),
                     },
                   ],
@@ -306,24 +310,24 @@ class _MenuItemState<T> extends State<_MenuItem<T>> with SingleTickerProviderSta
     );
   }
 
-  Color _getBackgroundColor(bool isHovered) {
+  Color _getBackgroundColor(AppColors colors, bool isHovered) {
     if (!widget.item.enabled) return Colors.transparent;
-    return isHovered ? AppTheme.primaryColor.withValues(alpha: 0.08) : Colors.transparent;
+    return isHovered ? colors.primary.withValues(alpha: 0.08) : Colors.transparent;
   }
 
-  Color _getTextColor(bool isHovered) {
-    if (!widget.item.enabled) return AppTheme.textHint;
+  Color _getTextColor(AppColors colors, bool isHovered) {
+    if (!widget.item.enabled) return colors.textHint;
     if (widget.item.isDangerous) {
-      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withValues(alpha: 0.8);
+      return isHovered ? colors.error : colors.error.withValues(alpha: 0.8);
     }
-    return isHovered ? AppTheme.primaryColor : AppTheme.textPrimary;
+    return isHovered ? colors.primary : colors.textPrimary;
   }
 
-  Color _getIconColor(bool isHovered) {
-    if (!widget.item.enabled) return AppTheme.textHint;
+  Color _getIconColor(AppColors colors, bool isHovered) {
+    if (!widget.item.enabled) return colors.textHint;
     if (widget.item.isDangerous) {
-      return isHovered ? AppTheme.errorColor : AppTheme.errorColor.withValues(alpha: 0.8);
+      return isHovered ? colors.error : colors.error.withValues(alpha: 0.8);
     }
-    return isHovered ? AppTheme.primaryColor : AppTheme.textSecondary;
+    return isHovered ? colors.primary : colors.textSecondary;
   }
 }
