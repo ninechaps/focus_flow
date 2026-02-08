@@ -29,6 +29,8 @@
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		65DD2E4D667F945BA24A67E8 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C036E4070F2812B2211C9D66 /* Pods_Runner.framework */; };
 		9FE65ADCAD39157DEAB2A9AD /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F2ACC8A55EACA439A5BA8E3 /* Pods_RunnerTests.framework */; };
+		AA1B2C3D4E5F607182930A1B /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F607182930A1C /* StatusBarController.swift */; };
+		AA1B2C3D4E5F607182930A2B /* FocusPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1B2C3D4E5F607182930A2C /* FocusPopoverView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,6 +71,8 @@
 		33CC10ED2044A3C60003C045 /* focus_flow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = focus_flow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		33CC10F02044A3C60003C045 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		33CC10F22044A3C60003C045 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Runner/Assets.xcassets; sourceTree = "<group>"; };
+		AA1B2C3D4E5F607182930A1C /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
+		AA1B2C3D4E5F607182930A2C /* FocusPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusPopoverView.swift; sourceTree = "<group>"; };
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
 		33CC11122044BFA00003C045 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
@@ -177,6 +181,8 @@
 			children = (
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
+				AA1B2C3D4E5F607182930A1C /* StatusBarController.swift */,
+				AA1B2C3D4E5F607182930A2C /* FocusPopoverView.swift */,
 				33E51913231747F40026EE4D /* DebugProfile.entitlements */,
 				33E51914231749380026EE4D /* Release.entitlements */,
 				33CC11242044D66E0003C045 /* Resources */,
@@ -441,6 +447,8 @@
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
+				AA1B2C3D4E5F607182930A1B /* StatusBarController.swift in Sources */,
+				AA1B2C3D4E5F607182930A2B /* FocusPopoverView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
