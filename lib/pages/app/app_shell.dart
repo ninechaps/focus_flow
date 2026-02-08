@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import '../../widgets/layout/sidebar.dart';
 import '../../theme/app_theme.dart';
@@ -18,33 +19,43 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
 
-    return Scaffold(
-      body: Row(
-        children: [
-          // Fixed-width sidebar
-          const Sidebar(),
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.keyW, meta: true): () {
+          appWindow.hide();
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          body: Row(
+            children: [
+              // Fixed-width sidebar
+              const Sidebar(),
 
-          // Main content area
-          Expanded(
-            child: Stack(
-              children: [
-                // Page content (full height, no constraints from title bar)
-                Container(
-                  color: colors.background,
-                  child: child,
-                ),
+              // Main content area
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Page content (full height, no constraints from title bar)
+                    Container(
+                      color: colors.background,
+                      child: child,
+                    ),
 
-                // Draggable title bar area (overlay for window dragging only)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: _DraggableTitleBar(),
+                    // Draggable title bar area (overlay for window dragging only)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: _DraggableTitleBar(),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

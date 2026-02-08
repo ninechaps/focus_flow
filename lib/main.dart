@@ -12,6 +12,7 @@ import './providers/theme_provider.dart';
 import './widgets/auth_wrapper.dart';
 import './theme/app_theme.dart';
 import './repositories/repository_provider.dart';
+import './services/platform-integration-service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,9 +20,24 @@ void main() async {
   // Initialize repository provider with SQLite database
   await RepositoryProvider.instance.init();
 
-  runApp(const MyApp());
+  // Create Provider instances upfront so PlatformIntegrationService can reference them
+  final focusProvider = FocusProvider();
+  final taskProvider = TaskProvider();
+
+  // Create the platform integration service (tray, hotkeys, notifications)
+  final platformService = PlatformIntegrationService(
+    focusProvider: focusProvider,
+    taskProvider: taskProvider,
+  );
+
+  runApp(MyApp(
+    focusProvider: focusProvider,
+    taskProvider: taskProvider,
+    platformService: platformService,
+  ));
+
   doWhenWindowReady(() {
-    const initialSize = Size(1280,800);
+    const initialSize = Size(1280, 800);
     appWindow.minSize = initialSize;
     appWindow.size = initialSize;
     appWindow.alignment = Alignment.center;
@@ -31,23 +47,52 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final FocusProvider focusProvider;
+  final TaskProvider taskProvider;
+  final PlatformIntegrationService platformService;
+
+  const MyApp({
+    super.key,
+    required this.focusProvider,
+    required this.taskProvider,
+    required this.platformService,
+  });
 
   @override
   State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  /// Router 实例只创建一次，避免主题切换时路由状态重置
   late final GoRouter _router = router();
+
+  @override
+  void initState() {
+    super.initState();
+    // Provide router to platform service for focus page navigation from tray
+    widget.platformService.setRouter(_router);
+    // Initialize platform services after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        await widget.platformService.init();
+      } catch (e) {
+        debugPrint('Platform integration init failed: $e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    widget.platformService.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
-        ChangeNotifierProvider(create: (context) => TaskProvider()),
-        ChangeNotifierProvider(create: (context) => FocusProvider()),
+        ChangeNotifierProvider.value(value: widget.taskProvider),
+        ChangeNotifierProvider.value(value: widget.focusProvider),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
