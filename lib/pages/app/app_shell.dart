@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/layout/sidebar.dart';
 import '../../theme/app_theme.dart';
 
@@ -18,6 +19,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final isFocusPage = GoRouterState.of(context).uri.path.startsWith('/app/focus');
 
     return CallbackShortcuts(
       bindings: {
@@ -30,8 +32,8 @@ class AppShell extends StatelessWidget {
         child: Scaffold(
           body: Row(
             children: [
-              // Fixed-width sidebar
-              const Sidebar(),
+              // Hide sidebar on focus page for immersive experience
+              if (!isFocusPage) const Sidebar(),
 
               // Main content area
               Expanded(

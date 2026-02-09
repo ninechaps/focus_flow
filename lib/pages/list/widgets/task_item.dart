@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
@@ -55,16 +56,17 @@ class _TaskItemState extends State<TaskItem> {
   }
 
   String _formatDate(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final taskDate = DateTime(date.year, date.month, date.day);
 
     if (taskDate == today) {
-      return '今天到期';
+      return l10n.dueDateToday;
     } else if (taskDate == today.add(const Duration(days: 1))) {
-      return '明天';
+      return l10n.dueDateTomorrow;
     } else if (taskDate.isBefore(today)) {
-      return '已逾期';
+      return l10n.dueDateOverdue;
     }
 
     final months = [
@@ -126,14 +128,15 @@ class _TaskItemState extends State<TaskItem> {
 
   /// Show right-click context menu
   Future<void> _showContextMenu(BuildContext context, Offset position) async {
+    final l10n = AppLocalizations.of(context)!;
     final result = await ContextMenu.show<String>(
       context: context,
       position: position,
       groups: [
         ContextMenuGroup(
           items: [
-            const ContextMenuItem(
-              label: '编辑任务',
+            ContextMenuItem(
+              label: l10n.editTaskContextMenu,
               icon: Icons.edit_outlined,
               value: 'edit',
             ),
@@ -142,19 +145,19 @@ class _TaskItemState extends State<TaskItem> {
         ContextMenuGroup(
           items: [
             ContextMenuItem(
-              label: '高优先级',
+              label: l10n.priorityHigh,
               icon: Icons.circle,
               value: 'priority_high',
               enabled: widget.task.priority != TaskPriority.high,
             ),
             ContextMenuItem(
-              label: '中优先级',
+              label: l10n.priorityMedium,
               icon: Icons.circle,
               value: 'priority_medium',
               enabled: widget.task.priority != TaskPriority.medium,
             ),
             ContextMenuItem(
-              label: '低优先级',
+              label: l10n.priorityLow,
               icon: Icons.circle,
               value: 'priority_low',
               enabled: widget.task.priority != TaskPriority.low,
@@ -164,19 +167,19 @@ class _TaskItemState extends State<TaskItem> {
         ContextMenuGroup(
           items: [
             ContextMenuItem(
-              label: '待办',
+              label: l10n.statusPending,
               icon: Icons.radio_button_unchecked,
               value: 'status_pending',
               enabled: widget.task.status != TaskStatus.pending,
             ),
             ContextMenuItem(
-              label: '进行中',
+              label: l10n.statusInProgress,
               icon: Icons.timelapse,
               value: 'status_in_progress',
               enabled: widget.task.status != TaskStatus.inProgress,
             ),
             ContextMenuItem(
-              label: '已完成',
+              label: l10n.statusCompleted,
               icon: Icons.check_circle_outline,
               value: 'status_completed',
               enabled: widget.task.status != TaskStatus.completed,
@@ -185,8 +188,8 @@ class _TaskItemState extends State<TaskItem> {
         ),
         ContextMenuGroup(
           items: [
-            const ContextMenuItem(
-              label: '删除任务',
+            ContextMenuItem(
+              label: l10n.deleteTaskContextMenu,
               icon: Icons.delete_outline,
               value: 'delete',
               isDangerous: true,
@@ -471,7 +474,7 @@ class _TaskItemState extends State<TaskItem> {
                             if (isTopLevel)
                               _ActionButton(
                                 icon: Icons.add,
-                                tooltip: '添加子任务',
+                                tooltip: AppLocalizations.of(context)!.addSubtask,
                                 onTap: widget.onAddSubtask,
                               ),
 
@@ -668,7 +671,7 @@ class _PlayButtonState extends State<_PlayButton> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: Tooltip(
-          message: '专注此任务',
+          message: AppLocalizations.of(context)!.focusOnTask,
           child: Container(
             width: 28,
             height: 28,

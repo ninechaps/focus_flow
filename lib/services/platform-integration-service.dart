@@ -10,6 +10,69 @@ import 'hotkey-service.dart';
 import 'native_tray_service.dart';
 import 'notification-service.dart';
 
+/// Localized strings used by the platform integration service.
+/// Updated when the locale changes via [updateLocalizedStrings].
+class PlatformLocalizedStrings {
+  final String trayStartFocus;
+  final String trayStart;
+  final String trayPause;
+  final String trayResume;
+  final String traySkipBreak;
+  final String trayStop;
+  final String trayOpenApp;
+  final String trayQuit;
+  final String notificationFocusComplete;
+  final String Function(String taskName, String duration) notificationFocusBody;
+  final String notificationBreakComplete;
+  final String notificationBreakBody;
+  final String popoverFocusSession;
+  final String popoverPause;
+  final String popoverStop;
+  final String popoverResume;
+  final String popoverStart;
+  final String popoverThisSession;
+  final String popoverTotalFocus;
+  final String popoverSessions;
+  final String popoverNoActiveFocus;
+  final String popoverOpenApp;
+  final String popoverFocusing;
+  final String popoverPaused;
+  final String popoverReady;
+  final String popoverCompleted;
+
+  const PlatformLocalizedStrings({
+    this.trayStartFocus = '▶ Start Focus',
+    this.trayStart = '▶ Start',
+    this.trayPause = '⏸ Pause',
+    this.trayResume = '▶ Resume',
+    this.traySkipBreak = '⏭ Skip Break',
+    this.trayStop = '⏹ Stop',
+    this.trayOpenApp = 'Open Focus Hut',
+    this.trayQuit = 'Quit',
+    this.notificationFocusComplete = 'Focus Complete!',
+    this.notificationFocusBody = _defaultFocusBody,
+    this.notificationBreakComplete = 'Break Over',
+    this.notificationBreakBody = 'Ready to start the next focus session',
+    this.popoverFocusSession = 'Focus Session',
+    this.popoverPause = '⏸ Pause',
+    this.popoverStop = '⏹ Stop',
+    this.popoverResume = '▶ Resume',
+    this.popoverStart = '▶ Start',
+    this.popoverThisSession = 'This Session',
+    this.popoverTotalFocus = 'Total Focus',
+    this.popoverSessions = 'Sessions',
+    this.popoverNoActiveFocus = 'No active focus session',
+    this.popoverOpenApp = 'Open Focus Hut',
+    this.popoverFocusing = 'Focusing',
+    this.popoverPaused = 'Paused',
+    this.popoverReady = 'Ready',
+    this.popoverCompleted = 'Completed',
+  });
+
+  static String _defaultFocusBody(String taskName, String duration) =>
+      '$taskName — This session: $duration';
+}
+
 /// Orchestrator that connects FocusProvider with platform services
 /// (tray, hotkeys, notifications). Listens to FocusProvider changes
 /// and delegates to the appropriate sub-service.
@@ -22,6 +85,9 @@ class PlatformIntegrationService {
   final NotificationService _notificationService;
 
   GoRouter? _router;
+
+  /// Localized strings, updated when locale changes
+  PlatformLocalizedStrings _strings = const PlatformLocalizedStrings();
 
   /// Track the previous state to detect transitions
   FocusState _previousState = FocusState.idle;
@@ -41,6 +107,14 @@ class PlatformIntegrationService {
   /// Set the router for focus page navigation from tray
   void setRouter(GoRouter router) {
     _router = router;
+  }
+
+  /// Update the localized strings (call when locale changes)
+  void updateLocalizedStrings(PlatformLocalizedStrings strings) {
+    _strings = strings;
+    // Re-sync tray menu and popover with new strings
+    _safeAsync(_updateTrayMenu());
+    _safeAsync(_syncPopoverState());
   }
 
   /// Initialize all platform services and start listening
@@ -75,7 +149,7 @@ class PlatformIntegrationService {
     final stateChanged = currentState != _previousState;
 
     // Update title and popover on every tick when timer is active
-    if (currentState == FocusState.running) {
+    if (currentState == FocusState.running || currentState == FocusState.breaking) {
       _safeAsync(_updateTrayTitle());
       _safeAsync(_syncPopoverState());
     }
@@ -102,6 +176,13 @@ class PlatformIntegrationService {
         await _trayService.updateTitle('');
         await _updateTrayMenu();
         await _syncPopoverState();
+        // Notify when break ends (transition from breaking → ready)
+        if (from == FocusState.breaking) {
+          _safeAsync(_notificationService.showBreakComplete(
+            title: _strings.notificationBreakComplete,
+            body: _strings.notificationBreakBody,
+          ));
+        }
         break;
 
       case FocusState.running:
@@ -124,6 +205,13 @@ class PlatformIntegrationService {
         await _syncPopoverState();
         _safeAsync(_sendCompletionNotification());
         break;
+
+      case FocusState.breaking:
+        await _trayService.setActiveIcon();
+        await _updateTrayTitle();
+        await _updateTrayMenu();
+        await _syncPopoverState();
+        break;
     }
   }
 
@@ -139,8 +227,24 @@ class PlatformIntegrationService {
       progress: _focusProvider.progress,
       timerMode: _focusProvider.timerMode.name,
       sessionTime: _focusProvider.formattedSessionTime,
-      totalTime: _focusProvider.formattedElapsedTime,
-      sessions: _focusProvider.completedSessions,
+      totalTime: _focusProvider.formattedTodayTotalTime,
+      sessions: _focusProvider.todaySessionCount,
+      localizedStrings: {
+        'focusSession': _strings.popoverFocusSession,
+        'pause': _strings.popoverPause,
+        'stop': _strings.popoverStop,
+        'resume': _strings.popoverResume,
+        'start': _strings.popoverStart,
+        'thisSession': _strings.popoverThisSession,
+        'totalFocus': _strings.popoverTotalFocus,
+        'sessions': _strings.popoverSessions,
+        'noActiveFocus': _strings.popoverNoActiveFocus,
+        'openApp': _strings.popoverOpenApp,
+        'focusing': _strings.popoverFocusing,
+        'paused': _strings.popoverPaused,
+        'ready': _strings.popoverReady,
+        'completed': _strings.popoverCompleted,
+      },
     );
   }
 
@@ -153,6 +257,8 @@ class PlatformIntegrationService {
       await _trayService.updateTitle('🍅 $time');
     } else if (state == FocusState.paused) {
       await _trayService.updateTitle('⏸ $time');
+    } else if (state == FocusState.breaking) {
+      await _trayService.updateTitle('☕ $time');
     }
   }
 
@@ -166,32 +272,38 @@ class PlatformIntegrationService {
 
     switch (state) {
       case FocusState.idle:
-        primaryAction = '▶ 开始专注';
+        primaryAction = _strings.trayStartFocus;
         break;
       case FocusState.ready:
-        primaryAction = '▶ 开始';
+        primaryAction = _strings.trayStart;
         break;
       case FocusState.running:
-        primaryAction = '⏸ 暂停';
+        primaryAction = _strings.trayPause;
         showStop = true;
         break;
       case FocusState.paused:
-        primaryAction = '▶ 继续';
+        primaryAction = _strings.trayResume;
         showStop = true;
         break;
       case FocusState.completed:
         primaryAction = null;
+        break;
+      case FocusState.breaking:
+        primaryAction = _strings.traySkipBreak;
         break;
     }
 
     await _trayService.updateContextMenu(
       taskName: task?.title,
       remainingTime:
-          (state == FocusState.running || state == FocusState.paused)
+          (state == FocusState.running || state == FocusState.paused || state == FocusState.breaking)
               ? _focusProvider.formattedTime
               : null,
       primaryActionLabel: primaryAction,
       showStop: showStop,
+      stopLabel: _strings.trayStop,
+      openAppLabel: _strings.trayOpenApp,
+      quitLabel: _strings.trayQuit,
     );
   }
 
@@ -211,9 +323,12 @@ class PlatformIntegrationService {
     final task = _focusProvider.currentTask;
     if (task == null) return;
 
+    final duration = _focusProvider.formattedSessionTime;
     await _notificationService.showWorkSessionComplete(
       taskName: task.title,
-      duration: _focusProvider.formattedSessionTime,
+      duration: duration,
+      title: _strings.notificationFocusComplete,
+      body: _strings.notificationFocusBody(task.title, duration),
     );
   }
 
@@ -242,6 +357,9 @@ class PlatformIntegrationService {
         _focusProvider.resume();
         break;
       case FocusState.completed:
+        break;
+      case FocusState.breaking:
+        _focusProvider.skipBreak();
         break;
     }
   }

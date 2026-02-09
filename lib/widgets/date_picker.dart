@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 /// ============================================================================
@@ -24,12 +26,9 @@ class DatePicker extends StatelessWidget {
     this.formatDate,
   });
 
-  String _defaultFormat(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${months[date.month - 1]} ${date.day}';
+  String _defaultFormat(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.MMMd(locale).format(date);
   }
 
   @override
@@ -99,8 +98,8 @@ class DatePicker extends StatelessWidget {
                     child: Text(
                       hasDate
                           ? (formatDate?.call(selectedDate!) ??
-                              _defaultFormat(selectedDate!))
-                          : '选择日期',
+                              _defaultFormat(context, selectedDate!))
+                          : AppLocalizations.of(context)!.datePickerSelectDate,
                       style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.normal,
@@ -247,11 +246,9 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    final monthName = monthNames[_displayedMonth.month - 1];
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+    final monthName = DateFormat.MMMM(locale).format(_displayedMonth);
     final year = _displayedMonth.year;
 
     final firstDay = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
@@ -380,7 +377,11 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: ['日', '一', '二', '三', '四', '五', '六']
+                children: List.generate(7, (i) {
+                      // Sun=0, Mon=1, ..., Sat=6
+                      final date = DateTime(2024, 1, 7 + i); // 2024-01-07 is a Sunday
+                      return DateFormat.E(locale).format(date);
+                    })
                     .map((day) => SizedBox(
                           width: 30,
                           child: Center(
@@ -459,7 +460,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                           ),
                         ),
                         child: Text(
-                          '清除',
+                          l10n.datePickerClear,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
@@ -482,9 +483,9 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
                                 BorderRadius.circular(AppTheme.radiusMd),
                           ),
                         ),
-                        child: const Text(
-                          '确定',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.datePickerConfirm,
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                             color: Colors.white,
@@ -519,7 +520,7 @@ class _DatePickerDialogState extends State<DatePickerDialog> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          '选择时间: $currentTime',
+          AppLocalizations.of(context)!.datePickerSelectTime(currentTime),
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w500,

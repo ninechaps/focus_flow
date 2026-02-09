@@ -54,7 +54,13 @@ class StatusBarController: NSObject {
         if event.type == .rightMouseDown {
             showContextMenu()
         } else {
-            togglePopover()
+            // Only show popover when a focus session is active;
+            // otherwise show the context menu directly
+            if popoverState.isIdle {
+                showContextMenu()
+            } else {
+                togglePopover()
+            }
         }
     }
 

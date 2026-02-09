@@ -61,7 +61,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> login(String username, String password) async {
     if (username.isEmpty || password.isEmpty) {
-      _errorMessage = '用户名和密码不能为空';
+      _errorMessage = 'empty_credentials';
       notifyListeners();
       return false;
     }
@@ -89,7 +89,7 @@ class AuthProvider extends ChangeNotifier {
     } else {
       _isAuthenticated = false;
       _currentUser = null;
-      _errorMessage = '用户名或密码错误\n正确的用户名: admin, 密码: admin123';
+      _errorMessage = 'invalid_credentials';
     }
 
     _isLoading = false;

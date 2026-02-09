@@ -9,6 +9,7 @@ import './providers/auth_provider.dart';
 import './providers/task_provider.dart';
 import './providers/focus_provider.dart';
 import './providers/theme_provider.dart';
+import './providers/locale_provider.dart';
 import './widgets/auth_wrapper.dart';
 import './theme/app_theme.dart';
 import './repositories/repository_provider.dart';
@@ -80,6 +81,42 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  /// Update platform service localized strings when locale changes
+  void _updatePlatformStrings(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return;
+
+    widget.platformService.updateLocalizedStrings(PlatformLocalizedStrings(
+      trayStartFocus: l10n.trayStartFocus,
+      trayStart: l10n.trayStart,
+      trayPause: l10n.trayPause,
+      trayResume: l10n.trayResume,
+      traySkipBreak: l10n.traySkipBreak,
+      trayStop: l10n.trayStop,
+      trayOpenApp: l10n.trayOpenApp,
+      trayQuit: l10n.trayQuit,
+      notificationFocusComplete: l10n.notificationFocusComplete,
+      notificationFocusBody: (taskName, duration) =>
+          l10n.notificationFocusBody(taskName, duration),
+      notificationBreakComplete: l10n.notificationBreakComplete,
+      notificationBreakBody: l10n.notificationBreakBody,
+      popoverFocusSession: l10n.popoverFocusSession,
+      popoverPause: l10n.popoverPause,
+      popoverStop: l10n.popoverStop,
+      popoverResume: l10n.popoverResume,
+      popoverStart: l10n.popoverStart,
+      popoverThisSession: l10n.popoverThisSession,
+      popoverTotalFocus: l10n.popoverTotalFocus,
+      popoverSessions: l10n.popoverSessions,
+      popoverNoActiveFocus: l10n.popoverNoActiveFocus,
+      popoverOpenApp: l10n.popoverOpenApp,
+      popoverFocusing: l10n.popoverFocusing,
+      popoverPaused: l10n.popoverPaused,
+      popoverReady: l10n.popoverReady,
+      popoverCompleted: l10n.popoverCompleted,
+    ));
+  }
+
   @override
   void dispose() {
     widget.platformService.dispose();
@@ -94,9 +131,10 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: widget.taskProvider),
         ChangeNotifierProvider.value(value: widget.focusProvider),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => LocaleProvider()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
+      child: Consumer2<ThemeProvider, LocaleProvider>(
+        builder: (context, themeProvider, localeProvider, child) {
           return AuthWrapper(
             child: MaterialApp.router(
               debugShowCheckedModeBanner: false,
@@ -113,8 +151,12 @@ class _MyAppState extends State<MyApp> {
               theme: AppTheme.buildTheme(),
               darkTheme: AppTheme.buildDarkTheme(),
               themeMode: themeProvider.themeMode,
-              locale: const Locale('zh'),
+              locale: localeProvider.locale,
               routerConfig: _router,
+              builder: (context, child) {
+                _updatePlatformStrings(context);
+                return child ?? const SizedBox.shrink();
+              },
             ),
           );
         },

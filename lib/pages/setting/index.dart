@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/database_config.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/locale_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../theme/app_theme.dart';
@@ -17,24 +19,21 @@ class _SettingPageState extends State<SettingPage> {
   bool _isClearing = false;
 
   Future<void> _showClearConfirmDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清除所有数据'),
-        content: const Text(
-          '这将永久删除所有任务、标签和目标。\n'
-          '此操作不可撤销。\n\n'
-          '确定要继续吗？',
-        ),
+        title: Text(l10n.settingsClearConfirmTitle),
+        content: Text(l10n.settingsClearConfirmContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('清除全部'),
+            child: Text(l10n.settingsClearConfirmButton),
           ),
         ],
       ),
@@ -53,14 +52,16 @@ class _SettingPageState extends State<SettingPage> {
       await taskProvider.clearAllData();
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('数据已全部清除'), backgroundColor: Colors.green),
+          SnackBar(content: Text(l10n.settingsDataCleared), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('清除数据失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.settingsClearFailed('$e')), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -73,6 +74,7 @@ class _SettingPageState extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppTheme.spacingLg, 36, AppTheme.spacingLg, AppTheme.spacingLg),
@@ -80,26 +82,31 @@ class _SettingPageState extends State<SettingPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '设置',
+            l10n.settingsTitle,
             style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: AppTheme.spacingSm),
           Text(
-            '管理应用偏好设置',
+            l10n.settingsSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colors.textSecondary,
                 ),
           ),
           const SizedBox(height: AppTheme.spacingXl),
 
-          // ===== 外观设置 =====
+          // ===== Appearance =====
           _buildAppearanceSection(context),
+
+          const SizedBox(height: AppTheme.spacingXl),
+
+          // ===== Language =====
+          _buildLanguageSection(context),
 
           const SizedBox(height: AppTheme.spacingXl),
 
           // Debug section
           if (DatabaseConfig.debugMode) ...[
-            _buildSectionHeader(context, '开发者选项', Colors.orange, 'DEBUG'),
+            _buildSectionHeader(context, l10n.settingsDebugTitle, Colors.orange, 'DEBUG'),
             const SizedBox(height: AppTheme.spacingMd),
             _buildDebugSection(context),
             const SizedBox(height: AppTheme.spacingXl),
@@ -114,7 +121,7 @@ class _SettingPageState extends State<SettingPage> {
                   Icon(Icons.settings_outlined, size: 64, color: colors.textHint),
                   const SizedBox(height: AppTheme.spacingMd),
                   Text(
-                    '更多设置即将上线',
+                    l10n.settingsMoreComing,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: colors.textSecondary,
                         ),
@@ -130,12 +137,13 @@ class _SettingPageState extends State<SettingPage> {
 
   Widget _buildAppearanceSection(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final themeProvider = context.watch<ThemeProvider>();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(context, '外观', colors.primary, null),
+        _buildSectionHeader(context, l10n.settingsAppearance, colors.primary, null),
         const SizedBox(height: AppTheme.spacingMd),
         Container(
           padding: const EdgeInsets.all(AppTheme.spacingLg),
@@ -148,7 +156,7 @@ class _SettingPageState extends State<SettingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '主题模式',
+                l10n.settingsThemeMode,
                 style: TextStyle(
                   fontSize: AppTheme.fontSizeMd,
                   fontWeight: FontWeight.w600,
@@ -157,7 +165,7 @@ class _SettingPageState extends State<SettingPage> {
               ),
               const SizedBox(height: 4),
               Text(
-                '选择应用的外观主题',
+                l10n.settingsThemeHint,
                 style: TextStyle(
                   fontSize: AppTheme.fontSizeXs,
                   color: colors.textSecondary,
@@ -168,23 +176,91 @@ class _SettingPageState extends State<SettingPage> {
                 children: [
                   _ThemeOption(
                     icon: Icons.brightness_auto,
-                    label: '跟随系统',
+                    label: l10n.settingsFollowSystem,
                     isSelected: themeProvider.themeMode == ThemeMode.system,
                     onTap: () => themeProvider.setThemeMode(ThemeMode.system),
                   ),
                   const SizedBox(width: 8),
                   _ThemeOption(
                     icon: Icons.light_mode_outlined,
-                    label: '浅色',
+                    label: l10n.settingsLight,
                     isSelected: themeProvider.themeMode == ThemeMode.light,
                     onTap: () => themeProvider.setThemeMode(ThemeMode.light),
                   ),
                   const SizedBox(width: 8),
                   _ThemeOption(
                     icon: Icons.dark_mode_outlined,
-                    label: '深色',
+                    label: l10n.settingsDark,
                     isSelected: themeProvider.themeMode == ThemeMode.dark,
                     onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageSection(BuildContext context) {
+    final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
+    final localeProvider = context.watch<LocaleProvider>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(context, l10n.settingsLanguage, colors.primary, null),
+        const SizedBox(height: AppTheme.spacingMd),
+        Container(
+          padding: const EdgeInsets.all(AppTheme.spacingLg),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+            border: Border.all(color: colors.divider),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.settingsLanguageTitle,
+                style: TextStyle(
+                  fontSize: AppTheme.fontSizeMd,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.settingsLanguageHint,
+                style: TextStyle(
+                  fontSize: AppTheme.fontSizeXs,
+                  color: colors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  _ThemeOption(
+                    icon: Icons.brightness_auto,
+                    label: l10n.settingsLanguageSystem,
+                    isSelected: localeProvider.locale == null,
+                    onTap: () => localeProvider.setLocale(null),
+                  ),
+                  const SizedBox(width: 8),
+                  _ThemeOption(
+                    icon: Icons.translate,
+                    label: l10n.settingsLanguageChinese,
+                    isSelected: localeProvider.locale?.languageCode == 'zh',
+                    onTap: () => localeProvider.setLocale(const Locale('zh')),
+                  ),
+                  const SizedBox(width: 8),
+                  _ThemeOption(
+                    icon: Icons.language,
+                    label: l10n.settingsLanguageEnglish,
+                    isSelected: localeProvider.locale?.languageCode == 'en',
+                    onTap: () => localeProvider.setLocale(const Locale('en')),
                   ),
                 ],
               ),
@@ -237,6 +313,7 @@ class _SettingPageState extends State<SettingPage> {
 
   Widget _buildDebugSection(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingMd),
@@ -254,7 +331,7 @@ class _SettingPageState extends State<SettingPage> {
               const SizedBox(width: AppTheme.spacingSm),
               Expanded(
                 child: Text(
-                  '以下选项仅用于测试，发布前将移除。',
+                  l10n.settingsDebugWarning,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Colors.orange.shade700,
                       ),
@@ -270,12 +347,12 @@ class _SettingPageState extends State<SettingPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '清除所有数据',
+                      l10n.settingsClearAllData,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '删除数据库中的所有任务、标签和目标',
+                      l10n.settingsClearAllDataDesc,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: colors.textSecondary),
                     ),
                   ],
@@ -295,7 +372,7 @@ class _SettingPageState extends State<SettingPage> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.delete_forever, size: 18),
-                label: Text(_isClearing ? '清除中...' : '清除'),
+                label: Text(_isClearing ? l10n.settingsClearing : l10n.settingsClearButton),
               ),
             ],
           ),
@@ -305,7 +382,7 @@ class _SettingPageState extends State<SettingPage> {
   }
 }
 
-/// macOS 风格主题选项按钮
+/// macOS style option button (reused for theme and language)
 class _ThemeOption extends StatefulWidget {
   final IconData icon;
   final String label;

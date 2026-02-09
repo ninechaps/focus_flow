@@ -13,13 +13,15 @@ class DatabaseConfig {
   /// Version 4: Add focus_duration to tasks for tracking focus time
   /// Version 5: Add completed_at to tasks for tracking completion time
   /// Version 6: Add sort_order to tasks for drag-and-drop reordering
-  static const int databaseVersion = 6;
+  /// Version 7: Add focus_sessions table for session history
+  static const int databaseVersion = 7;
 
   /// Table names
   static const String tableTask = 'tasks';
   static const String tableTag = 'tags';
   static const String tableGoal = 'goals';
   static const String tableTaskTag = 'task_tags'; // Junction table for many-to-many
+  static const String tableFocusSession = 'focus_sessions';
 
   /// Column names for tasks table
   static const String colId = 'id';
@@ -43,6 +45,14 @@ class DatabaseConfig {
   /// Column names for task_tags junction table
   static const String colTaskId = 'task_id';
   static const String colTagId = 'tag_id';
+
+  /// Column names for focus_sessions table
+  static const String colStartedAt = 'started_at';
+  static const String colEndedAt = 'ended_at';
+  static const String colDurationSeconds = 'duration_seconds';
+  static const String colTargetSeconds = 'target_seconds';
+  static const String colTimerMode = 'timer_mode';
+  static const String colCompletionType = 'completion_type';
 
   /// Enable debug mode for development
   /// Set to false in production

@@ -132,15 +132,18 @@ struct FocusPopoverView: View {
                 .rotationEffect(.degrees(-90))
                 .animation(.easeInOut(duration: 0.3), value: state.progress)
 
-            // Time text
+            // Time text (adaptive size to fit inside the ring)
             VStack(spacing: 2) {
                 Text(state.formattedTime)
-                    .font(.system(size: 28, weight: .medium, design: .monospaced))
+                    .font(.system(size: timerFontSize, weight: .medium, design: .monospaced))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
 
                 Text(statusLabel)
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
             }
+            .frame(width: 100)
         }
     }
 
@@ -228,6 +231,11 @@ struct FocusPopoverView: View {
     }
 
     // MARK: - Helpers
+
+    /// Adaptive font size: shorter times (MM:SS) get 28pt, longer times (H:MM:SS) get 20pt
+    private var timerFontSize: CGFloat {
+        state.formattedTime.count > 5 ? 20 : 28
+    }
 
     private var statusColor: Color {
         switch state.focusState {

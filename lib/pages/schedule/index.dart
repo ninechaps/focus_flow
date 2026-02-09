@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/task_provider.dart';
 import '../../models/task.dart';
@@ -20,46 +22,16 @@ class _SchedulePageState extends State<SchedulePage> {
   static const _priorityMedium = Color(0xFFF59E0B);
   static const _priorityLow = Color(0xFF22C55E);
 
-  static const _weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  static const _monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
+  /// Get locale-aware short weekday names (Mon-Sun)
+  List<String> _weekDays(String locale) {
+    // Generate Mon(1) to Sun(7) using a known Monday date
+    return List.generate(7, (i) {
+      final date = DateTime(2024, 1, 1 + i); // 2024-01-01 is Monday
+      return DateFormat.E(locale).format(date);
+    });
+  }
 
-  static const _shortMonthNames = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
 
-  static const _dayOfWeekNames = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday',
-  ];
 
   @override
   void initState() {
@@ -162,22 +134,22 @@ class _SchedulePageState extends State<SchedulePage> {
   }
 
   String _statusLabel(TaskStatus status) {
+    final l10n = AppLocalizations.of(context)!;
     switch (status) {
       case TaskStatus.completed:
-        return 'Completed';
+        return l10n.statusCompleted;
       case TaskStatus.inProgress:
-        return 'In Progress';
+        return l10n.statusInProgress;
       case TaskStatus.pending:
-        return 'Pending';
+        return l10n.statusPending;
       case TaskStatus.deleted:
-        return 'Deleted';
+        return l10n.statusDeleted;
     }
   }
 
-  String _formatSelectedDate(DateTime date) {
-    final dayName = _dayOfWeekNames[date.weekday - 1];
-    final monthName = _shortMonthNames[date.month - 1];
-    return '$dayName, $monthName ${date.day}';
+  String _formatSelectedDate(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.MMMEd(locale).format(date);
   }
 
   @override
@@ -242,8 +214,8 @@ class _SchedulePageState extends State<SchedulePage> {
 
   Widget _buildMonthNavigation() {
     final colors = context.appColors;
-    final title =
-        '${_monthNames[_currentMonth.month - 1]} ${_currentMonth.year}';
+    final locale = Localizations.localeOf(context).toString();
+    final title = DateFormat.yMMMM(locale).format(_currentMonth);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTheme.spacingLg,
@@ -296,7 +268,7 @@ class _SchedulePageState extends State<SchedulePage> {
               ),
             ),
             child: Text(
-              'Today',
+              AppLocalizations.of(context)!.filterToday,
               style: TextStyle(
                 fontSize: AppTheme.fontSizeSm,
                 color: colors.textSecondary,
@@ -316,7 +288,7 @@ class _SchedulePageState extends State<SchedulePage> {
         vertical: AppTheme.spacingSm,
       ),
       child: Row(
-        children: _weekDays.map((day) {
+        children: _weekDays(Localizations.localeOf(context).toString()).map((day) {
           return Expanded(
             child: Center(
               child: Text(
@@ -464,7 +436,7 @@ class _SchedulePageState extends State<SchedulePage> {
           Padding(
             padding: const EdgeInsets.all(AppTheme.spacingLg),
             child: Text(
-              _formatSelectedDate(_selectedDate),
+              _formatSelectedDate(context, _selectedDate),
               style: TextStyle(
                 fontSize: AppTheme.fontSizeLg,
                 fontWeight: FontWeight.w600,
@@ -478,7 +450,7 @@ class _SchedulePageState extends State<SchedulePage> {
             child: tasksForDate.isEmpty
                 ? Center(
                     child: Text(
-                      'No tasks for this day',
+                      AppLocalizations.of(context)!.noTasksForDay,
                       style: TextStyle(
                         fontSize: AppTheme.fontSizeMd,
                         color: colors.textHint,

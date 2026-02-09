@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/goal.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/app_text_field.dart';
@@ -29,9 +30,10 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       if (_dueDate == null) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a due date'),
+          SnackBar(
+            content: Text(l10n.pleaseSelectDueDate),
             backgroundColor: AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -61,8 +63,9 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DialogBox(
-      title: 'Create New Goal',
+      title: l10n.createNewGoal,
       onClose: () => Navigator.pop(context),
       width: 440,
       content: Form(
@@ -71,24 +74,24 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
-              label: 'Goal Name',
-              hint: 'e.g., Learn Flutter',
+              label: l10n.goalName,
+              hint: l10n.goalNamePlaceholder,
               controller: _nameController,
               autofocus: true,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Goal name is required';
+                  return l10n.goalNameRequired;
                 }
                 if (value.trim().length > 100) {
-                  return 'Goal name must be less than 100 characters';
+                  return l10n.goalNameTooLong;
                 }
                 return null;
               },
             ),
             const SizedBox(height: 18), // 18px - 合理的字段间距
             DatePicker(
-              label: 'Target Due Date',
-              helper: 'When do you want to achieve this goal?',
+              label: l10n.targetDueDate,
+              helper: l10n.targetDueDateHint,
               selectedDate: _dueDate,
               formatDate: _formatDate,
               onDateChanged: (date) => setState(() => _dueDate = date),
@@ -99,11 +102,11 @@ class _AddGoalDialogState extends State<AddGoalDialog> {
       ),
       actions: [
         DialogButton(
-          label: 'Cancel',
+          label: l10n.cancel,
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(
-          label: 'Create Goal',
+          label: l10n.createGoal,
           onPressed: _submit,
           isPrimary: true,
         ),

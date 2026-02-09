@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/tag.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/app_text_field.dart';
@@ -69,8 +70,9 @@ class _EditTagDialogState extends State<EditTagDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     return DialogBox(
-      title: 'Edit Tag',
+      title: l10n.editTag,
       onClose: () => Navigator.pop(context),
       width: 420,
       content: Form(
@@ -80,17 +82,17 @@ class _EditTagDialogState extends State<EditTagDialog> {
           children: [
             // Tag Name
             AppTextField(
-              label: 'Tag Name',
-              hint: 'e.g., Design, Development',
-              helper: 'Give your tag a descriptive name',
+              label: l10n.tagName,
+              hint: l10n.tagNamePlaceholder,
+              helper: l10n.tagNameHint,
               controller: _nameController,
               autofocus: true,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Tag name is required';
+                  return l10n.tagNameRequired;
                 }
                 if (value.trim().length > 50) {
-                  return 'Tag name must be less than 50 characters';
+                  return l10n.tagNameTooLong;
                 }
                 return null;
               },
@@ -102,7 +104,7 @@ class _EditTagDialogState extends State<EditTagDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Select Color',
+                  l10n.selectColor,
                   style: TextStyle(
                     fontSize: AppTheme.fontSizeSm,
                     fontWeight: FontWeight.w500,
@@ -166,11 +168,11 @@ class _EditTagDialogState extends State<EditTagDialog> {
       ),
       actions: [
         DialogButton(
-          label: 'Cancel',
+          label: l10n.cancel,
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(
-          label: 'Save Tag',
+          label: l10n.saveTag,
           onPressed: _submit,
           isPrimary: true,
         ),

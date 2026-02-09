@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
@@ -141,6 +142,7 @@ class _TaskListHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
@@ -154,7 +156,7 @@ class _TaskListHeader extends StatelessWidget {
                 onChanged: onSearchChanged,
                 style: TextStyle(fontSize: 13, color: colors.textPrimary),
                 decoration: InputDecoration(
-                  hintText: '搜索任务...',
+                  hintText: l10n.searchTasks,
                   hintStyle: TextStyle(
                     color: colors.textHint,
                     fontSize: 13,
@@ -220,6 +222,7 @@ class _AddTaskButtonState extends State<_AddTaskButton> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -254,21 +257,21 @@ class _AddTaskButtonState extends State<_AddTaskButton> {
           transform: _isHovered
               ? Matrix4.translationValues(0, -1.0, 0)
               : Matrix4.identity(),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '＋',
+              const Text(
+                '+',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: Colors.white,
                 ),
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
-                '新建任务',
-                style: TextStyle(
+                l10n.newTask,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: Colors.white,
@@ -295,6 +298,7 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
 
     String title;
     String subtitle;
@@ -303,26 +307,26 @@ class _EmptyState extends StatelessWidget {
 
     switch (selectedStatusFilter) {
       case 'pending':
-        title = '没有待办任务';
-        subtitle = '创建你的第一个任务开始吧';
+        title = l10n.noPendingTasks;
+        subtitle = l10n.noPendingTasksHint;
         icon = Icons.task_alt_outlined;
         showCreateButton = true;
         break;
       case 'in_progress':
-        title = '没有进行中的任务';
-        subtitle = '开始一个任务后会显示在这里';
+        title = l10n.noInProgressTasks;
+        subtitle = l10n.noInProgressTasksHint;
         icon = Icons.hourglass_empty;
         showCreateButton = false;
         break;
       case 'completed':
-        title = '没有已完成的任务';
-        subtitle = '完成一个任务后会显示在这里';
+        title = l10n.noCompletedTasks;
+        subtitle = l10n.noCompletedTasksHint;
         icon = Icons.check_circle_outline;
         showCreateButton = false;
         break;
       default:
-        title = '还没有任务';
-        subtitle = '创建你的第一个任务开始吧';
+        title = l10n.noTasksYet;
+        subtitle = l10n.noTasksYetHint;
         icon = Icons.task_alt_outlined;
         showCreateButton = true;
         break;
@@ -359,7 +363,7 @@ class _EmptyState extends StatelessWidget {
             ElevatedButton.icon(
               onPressed: onAddTask,
               icon: const Icon(Icons.add, size: 14),
-              label: const Text('新建任务'),
+              label: Text(l10n.newTask),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.primary,
                 foregroundColor: Colors.white,

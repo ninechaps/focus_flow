@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/task_provider.dart';
@@ -87,6 +88,7 @@ class _SidebarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final user = authProvider.currentUser;
     final username = user?.username ?? 'User';
     final email = user?.email ?? '';
@@ -113,12 +115,12 @@ class _SidebarContent extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ===== Navigation =====
-          const _SectionTitle(title: '导航'),
+          _SectionTitle(title: l10n.navNavigation),
           const SizedBox(height: 4),
           _SidebarNavItem(
             icon: Icons.list_alt_outlined,
             activeIcon: Icons.list_alt,
-            label: '任务列表',
+            label: l10n.navTaskList,
             count: totalTasks > 0 ? _formatCount(totalTasks) : null,
             isActive: currentLocation == '/app/list',
             onTap: () => context.go('/app/list'),
@@ -126,21 +128,21 @@ class _SidebarContent extends StatelessWidget {
           _SidebarNavItem(
             icon: Icons.calendar_month_outlined,
             activeIcon: Icons.calendar_month,
-            label: '日程安排',
+            label: l10n.navSchedule,
             isActive: currentLocation == '/app/schedule',
             onTap: () => context.go('/app/schedule'),
           ),
           _SidebarNavItem(
             icon: Icons.bar_chart_outlined,
             activeIcon: Icons.bar_chart,
-            label: '统计分析',
+            label: l10n.navStatistics,
             isActive: currentLocation == '/app/statistics',
             onTap: () => context.go('/app/statistics'),
           ),
           _SidebarNavItem(
             icon: Icons.settings_outlined,
             activeIcon: Icons.settings,
-            label: '设置',
+            label: l10n.navSettings,
             isActive: currentLocation == '/app/settings',
             onTap: () => context.go('/app/settings'),
           ),
@@ -148,12 +150,12 @@ class _SidebarContent extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ===== Schedule Filters =====
-          const _SectionTitle(title: '日程'),
+          _SectionTitle(title: l10n.scheduleFilterTitle),
           const SizedBox(height: 4),
           _SidebarNavItem(
             icon: Icons.wb_sunny_outlined,
             activeIcon: Icons.wb_sunny,
-            label: '今天',
+            label: l10n.filterToday,
             count: counts['today']! > 0 ? _formatCount(counts['today']!) : null,
             isActive: taskProvider.selectedTimeFilter == 'today' &&
                 currentLocation == '/app/list',
@@ -169,7 +171,7 @@ class _SidebarContent extends StatelessWidget {
           _SidebarNavItem(
             icon: Icons.date_range_outlined,
             activeIcon: Icons.date_range,
-            label: '本周',
+            label: l10n.filterThisWeek,
             count: counts['week']! > 0 ? _formatCount(counts['week']!) : null,
             isActive: taskProvider.selectedTimeFilter == 'week' &&
                 currentLocation == '/app/list',
@@ -185,7 +187,7 @@ class _SidebarContent extends StatelessWidget {
           _SidebarNavItem(
             icon: Icons.calendar_month_outlined,
             activeIcon: Icons.calendar_month,
-            label: '本月',
+            label: l10n.filterThisMonth,
             count: counts['month']! > 0 ? _formatCount(counts['month']!) : null,
             isActive: taskProvider.selectedTimeFilter == 'month' &&
                 currentLocation == '/app/list',
@@ -256,9 +258,10 @@ class _SidebarContent extends StatelessWidget {
         await taskProvider.addGoal(goal);
       } catch (e) {
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to add goal: $e'),
+              content: Text(l10n.failedToAddGoal('$e')),
               backgroundColor: Colors.red,
             ),
           );
@@ -274,9 +277,10 @@ class _SidebarContent extends StatelessWidget {
         await taskProvider.updateGoal(updatedGoal);
       } catch (e) {
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to update goal: $e'),
+              content: Text(l10n.failedToUpdateGoal('$e')),
               backgroundColor: Colors.red,
             ),
           );
@@ -286,19 +290,20 @@ class _SidebarContent extends StatelessWidget {
   }
 
   Future<void> _handleDeleteGoal(BuildContext context, String goalId) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Goal'),
-        content: const Text('Are you sure you want to delete this goal?'),
+        title: Text(l10n.deleteGoalTitle),
+        content: Text(l10n.deleteGoalConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -308,9 +313,10 @@ class _SidebarContent extends StatelessWidget {
         await taskProvider.deleteGoal(goalId);
       } catch (e) {
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to delete goal: $e'),
+              content: Text(l10n.failedToDeleteGoal('$e')),
               backgroundColor: Colors.red,
             ),
           );
@@ -326,9 +332,10 @@ class _SidebarContent extends StatelessWidget {
         await taskProvider.addTag(tag);
       } catch (e) {
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to add tag: $e'),
+              content: Text(l10n.failedToAddTag('$e')),
               backgroundColor: Colors.red,
             ),
           );
@@ -344,9 +351,10 @@ class _SidebarContent extends StatelessWidget {
         await taskProvider.updateTag(updatedTag);
       } catch (e) {
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to update tag: $e'),
+              content: Text(l10n.failedToUpdateTag('$e')),
               backgroundColor: Colors.red,
             ),
           );
@@ -356,19 +364,20 @@ class _SidebarContent extends StatelessWidget {
   }
 
   Future<void> _handleDeleteTag(BuildContext context, String tagId) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Tag'),
-        content: const Text('Are you sure you want to delete this tag?'),
+        title: Text(l10n.deleteTagTitle),
+        content: Text(l10n.deleteTagConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -378,9 +387,10 @@ class _SidebarContent extends StatelessWidget {
         await taskProvider.deleteTag(tagId);
       } catch (e) {
         if (context.mounted) {
+          final l10n = AppLocalizations.of(context)!;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to delete tag: $e'),
+              content: Text(l10n.failedToDeleteTag('$e')),
               backgroundColor: Colors.red,
             ),
           );
@@ -630,6 +640,7 @@ class _GoalsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final dotColors = [
       AppTheme.primaryColor,
       AppTheme.successColor,
@@ -641,7 +652,7 @@ class _GoalsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(title: '目标'),
+        _SectionTitle(title: l10n.sidebarGoals),
         const SizedBox(height: 4),
         for (int i = 0; i < goals.length; i++)
           _GoalItem(
@@ -655,7 +666,7 @@ class _GoalsSection extends StatelessWidget {
             onDelete: () => onDeleteGoal(goals[i].id),
           ),
         _AddButton(
-          label: '+ 新建目标',
+          label: l10n.sidebarNewGoal,
           onTap: onAddGoal,
         ),
       ],
@@ -693,6 +704,7 @@ class _GoalItemState extends State<_GoalItem> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -707,13 +719,13 @@ class _GoalItemState extends State<_GoalItem> {
             groups: [
               ContextMenuGroup(
                 items: [
-                  const ContextMenuItem(
-                    label: '编辑',
+                  ContextMenuItem(
+                    label: l10n.edit,
                     icon: Icons.edit_outlined,
                     value: 'edit',
                   ),
-                  const ContextMenuItem(
-                    label: '删除',
+                  ContextMenuItem(
+                    label: l10n.delete,
                     icon: Icons.delete_outline,
                     value: 'delete',
                     isDangerous: true,
@@ -800,10 +812,12 @@ class _TagsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(title: '标签'),
+        _SectionTitle(title: l10n.sidebarTags),
         const SizedBox(height: 6),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -825,7 +839,7 @@ class _TagsSection extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         _AddButton(
-          label: '+ 新建标签',
+          label: l10n.sidebarNewTag,
           onTap: onAddTag,
         ),
       ],
@@ -864,6 +878,7 @@ class _TagChipState extends State<_TagChip> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final tagColor = _parseColor(widget.tag.color);
 
     return MouseRegion(
@@ -879,13 +894,13 @@ class _TagChipState extends State<_TagChip> {
             groups: [
               ContextMenuGroup(
                 items: [
-                  const ContextMenuItem(
-                    label: '编辑',
+                  ContextMenuItem(
+                    label: l10n.edit,
                     icon: Icons.edit_outlined,
                     value: 'edit',
                   ),
-                  const ContextMenuItem(
-                    label: '删除',
+                  ContextMenuItem(
+                    label: l10n.delete,
                     icon: Icons.delete_outline,
                     value: 'delete',
                     isDangerous: true,

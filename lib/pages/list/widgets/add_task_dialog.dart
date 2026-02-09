@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/task.dart';
 import '../../../models/tag.dart';
 import '../../../models/goal.dart';
@@ -109,10 +110,11 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final dialogTitle = _isEditing
-        ? (_isSubtask ? '编辑子任务' : '编辑任务')
-        : (_isSubtask ? '新建子任务' : '新建任务');
-    final submitLabel = _isEditing ? '保存' : (_isSubtask ? '创建子任务' : '创建任务');
+        ? (_isSubtask ? l10n.editSubtask : l10n.editTask)
+        : (_isSubtask ? l10n.newSubtask : l10n.newTask);
+    final submitLabel = _isEditing ? l10n.save : (_isSubtask ? l10n.createSubtask : l10n.createTask);
 
     return DialogBox(
       title: dialogTitle,
@@ -126,16 +128,16 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           children: [
             // 任务标题
             AppTextField(
-              label: '任务标题',
-              hint: '输入任务名称...',
+              label: l10n.taskTitle,
+              hint: l10n.taskTitlePlaceholder,
               controller: _titleController,
               autofocus: !_isEditing,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return '请输入任务标题';
+                  return l10n.taskTitleRequired;
                 }
                 if (value.trim().length > 200) {
-                  return '标题不能超过200个字符';
+                  return l10n.taskTitleTooLong;
                 }
                 return null;
               },
@@ -144,14 +146,14 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
 
             // 描述
             AppTextField(
-              label: '描述（可选）',
-              hint: '添加更多细节...',
+              label: l10n.descriptionOptional,
+              hint: l10n.descriptionPlaceholder,
               controller: _descriptionController,
               maxLines: 2,
               keyboardType: TextInputType.multiline,
               validator: (value) {
                 if (value != null && value.length > 1000) {
-                  return '描述不能超过1000个字符';
+                  return l10n.descriptionTooLong;
                 }
                 return null;
               },
@@ -168,7 +170,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '优先级',
+                        l10n.priority,
                         style: TextStyle(
                           fontSize: AppTheme.fontSizeSm,
                           fontWeight: FontWeight.w500,
@@ -179,21 +181,21 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                       Row(
                         children: [
                           _PriorityDot(
-                            label: '低',
+                            label: l10n.priorityLowShort,
                             color: AppTheme.successColor,
                             isSelected: _priority == TaskPriority.low,
                             onTap: () => setState(() => _priority = TaskPriority.low),
                           ),
                           const SizedBox(width: 8),
                           _PriorityDot(
-                            label: '中',
+                            label: l10n.priorityMediumShort,
                             color: const Color(0xFFF59E0B),
                             isSelected: _priority == TaskPriority.medium,
                             onTap: () => setState(() => _priority = TaskPriority.medium),
                           ),
                           const SizedBox(width: 8),
                           _PriorityDot(
-                            label: '高',
+                            label: l10n.priorityHighShort,
                             color: AppTheme.errorColor,
                             isSelected: _priority == TaskPriority.high,
                             onTap: () => setState(() => _priority = TaskPriority.high),
@@ -207,7 +209,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                 // 截止日期
                 Expanded(
                   child: DatePicker(
-                    label: '截止日期（可选）',
+                    label: l10n.dueDateOptional,
                     selectedDate: _dueDate,
                     formatDate: _formatDate,
                     onDateChanged: (date) => setState(() => _dueDate = date),
@@ -221,12 +223,12 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             // 关联目标 + 标签 同一行（或按需展示）
             if (!_isSubtask && widget.availableGoals.isNotEmpty) ...[
               ProfessionalDropdown<String>(
-                label: '关联目标（可选）',
+                label: l10n.relatedGoalOptional,
                 value: _selectedGoalId,
                 items: [
-                  const DropdownMenuItem<String>(
+                  DropdownMenuItem<String>(
                     value: null,
-                    child: Text('无关联目标'),
+                    child: Text(l10n.noRelatedGoal),
                   ),
                   ...widget.availableGoals.map((goal) => DropdownMenuItem(
                     value: goal.id,
@@ -241,7 +243,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             // 标签
             if (widget.availableTags.isNotEmpty) ...[
               Text(
-                '标签',
+                l10n.tags,
                 style: TextStyle(
                   fontSize: AppTheme.fontSizeSm,
                   fontWeight: FontWeight.w500,
@@ -277,7 +279,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
       ),
       actions: [
         DialogButton(
-          label: '取消',
+          label: l10n.cancel,
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(

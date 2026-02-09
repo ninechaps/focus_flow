@@ -34,6 +34,8 @@ class NotificationService {
   Future<void> showWorkSessionComplete({
     required String taskName,
     required String duration,
+    required String title,
+    required String body,
   }) async {
     if (!_isInitialized) return;
 
@@ -47,14 +49,17 @@ class NotificationService {
 
     await _plugin.show(
       id: 0,
-      title: '专注完成！',
-      body: '$taskName — 本次专注 $duration',
+      title: title,
+      body: body,
       notificationDetails: details,
     );
   }
 
-  /// Show notification when a break period ends (reserved for future use)
-  Future<void> showBreakComplete() async {
+  /// Show notification when a break period ends
+  Future<void> showBreakComplete({
+    required String title,
+    required String body,
+  }) async {
     if (!_isInitialized) return;
 
     const details = NotificationDetails(
@@ -67,8 +72,8 @@ class NotificationService {
 
     await _plugin.show(
       id: 1,
-      title: '休息结束',
-      body: '准备开始下一个专注时段吧',
+      title: title,
+      body: body,
       notificationDetails: details,
     );
   }
