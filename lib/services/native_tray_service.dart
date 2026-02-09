@@ -90,6 +90,9 @@ class NativeTrayService {
     String? primaryActionLabel,
     bool showStop = false,
     String? todaySummary,
+    String stopLabel = '⏹ Stop',
+    String openAppLabel = 'Open Focus Hut',
+    String quitLabel = 'Quit',
   }) async {
     if (!_isInitialized) return;
 
@@ -117,7 +120,7 @@ class NativeTrayService {
     if (showStop) {
       items.add({
         'key': 'stop',
-        'label': '⏹ 停止',
+        'label': stopLabel,
         'type': 'normal',
       });
     }
@@ -134,13 +137,13 @@ class NativeTrayService {
     // Fixed items
     items.add({
       'key': 'show_window',
-      'label': '打开 Focus Hut',
+      'label': openAppLabel,
       'type': 'normal',
     });
     items.add({'type': 'separator'});
     items.add({
       'key': 'quit',
-      'label': '退出',
+      'label': quitLabel,
       'type': 'normal',
     });
 
@@ -162,6 +165,7 @@ class NativeTrayService {
     String? totalTime,
     int? sessions,
     String? breadcrumb,
+    Map<String, String>? localizedStrings,
   }) async {
     if (!_isInitialized) return;
 
@@ -177,6 +181,7 @@ class NativeTrayService {
     if (totalTime != null) args['totalTime'] = totalTime;
     if (sessions != null) args['sessions'] = sessions;
     if (breadcrumb != null) args['breadcrumb'] = breadcrumb;
+    if (localizedStrings != null) args['localizedStrings'] = localizedStrings;
 
     try {
       await _channel.invokeMethod('updatePopoverState', args);

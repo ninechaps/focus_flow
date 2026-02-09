@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/goal.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/date_picker.dart';
@@ -57,8 +58,9 @@ class _EditGoalDialogState extends State<EditGoalDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return DialogBox(
-      title: 'Edit Goal',
+      title: l10n.editGoal,
       onClose: () => Navigator.pop(context),
       width: 440,
       content: Form(
@@ -67,24 +69,24 @@ class _EditGoalDialogState extends State<EditGoalDialog> {
           mainAxisSize: MainAxisSize.min,
           children: [
             AppTextField(
-              label: 'Goal Name',
-              hint: 'e.g., Learn Flutter',
+              label: l10n.goalName,
+              hint: l10n.goalNamePlaceholder,
               controller: _nameController,
               autofocus: true,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Goal name is required';
+                  return l10n.goalNameRequired;
                 }
                 if (value.trim().length > 100) {
-                  return 'Goal name must be less than 100 characters';
+                  return l10n.goalNameTooLong;
                 }
                 return null;
               },
             ),
             const SizedBox(height: 18),
             DatePicker(
-              label: 'Target Due Date',
-              helper: 'When do you want to achieve this goal?',
+              label: l10n.targetDueDate,
+              helper: l10n.targetDueDateHint,
               selectedDate: _dueDate,
               formatDate: _formatDate,
               onDateChanged: (date) {
@@ -102,11 +104,11 @@ class _EditGoalDialogState extends State<EditGoalDialog> {
       ),
       actions: [
         DialogButton(
-          label: 'Cancel',
+          label: l10n.cancel,
           onPressed: () => Navigator.pop(context),
         ),
         DialogButton(
-          label: 'Save Goal',
+          label: l10n.saveGoal,
           onPressed: _submit,
           isPrimary: true,
         ),

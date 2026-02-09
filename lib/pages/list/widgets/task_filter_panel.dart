@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/enums.dart';
 import '../../../models/tag.dart';
@@ -109,6 +110,7 @@ class TaskFilterPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final counts = _calculateCounts();
 
     return Container(
@@ -128,11 +130,11 @@ class TaskFilterPanel extends StatelessWidget {
           const SizedBox(height: AppTheme.spacingMd),
           // Time filters section
           _FilterSection(
-            title: 'Schedule',
+            title: l10n.scheduleFilterTitle,
             children: [
               _TimeFilterItem(
                 icon: Icons.wb_sunny_outlined,
-                label: 'Today',
+                label: l10n.filterToday,
                 countText: counts['today']! > 0 ? _formatCount(counts['today']!) : null,
                 isSelected: selectedTimeFilter == 'today',
                 onTap: selectedTimeFilter == 'today'
@@ -141,7 +143,7 @@ class TaskFilterPanel extends StatelessWidget {
               ),
               _TimeFilterItem(
                 icon: Icons.date_range_outlined,
-                label: 'This Week',
+                label: l10n.filterThisWeek,
                 countText: counts['week']! > 0 ? _formatCount(counts['week']!) : null,
                 isSelected: selectedTimeFilter == 'week',
                 onTap: selectedTimeFilter == 'week'
@@ -150,7 +152,7 @@ class TaskFilterPanel extends StatelessWidget {
               ),
               _TimeFilterItem(
                 icon: Icons.calendar_month_outlined,
-                label: 'This Month',
+                label: l10n.filterThisMonth,
                 countText: counts['month']! > 0 ? _formatCount(counts['month']!) : null,
                 isSelected: selectedTimeFilter == 'month',
                 onTap: selectedTimeFilter == 'month'
@@ -159,7 +161,7 @@ class TaskFilterPanel extends StatelessWidget {
               ),
               _TimeFilterItem(
                 icon: Icons.history_outlined,
-                label: 'Earlier',
+                label: l10n.filterEarlier,
                 countText: counts['earlier']! > 0 ? _formatCount(counts['earlier']!) : null,
                 isSelected: selectedTimeFilter == 'earlier',
                 onTap: selectedTimeFilter == 'earlier'
@@ -168,7 +170,7 @@ class TaskFilterPanel extends StatelessWidget {
               ),
               _TimeFilterItem(
                 icon: Icons.all_inbox_outlined,
-                label: 'All Tasks',
+                label: l10n.filterAllTasks,
                 countText: counts['all']! > 0 ? _formatCount(counts['all']!) : null,
                 isSelected: selectedTimeFilter == 'all' || selectedTimeFilter == null,
                 onTap: selectedTimeFilter == 'all'
@@ -182,7 +184,7 @@ class TaskFilterPanel extends StatelessWidget {
           const SizedBox(height: AppTheme.spacingMd),
           // Goals section
           _FilterSection(
-            title: 'Goals',
+            title: l10n.sidebarGoals,
             trailing: IconButton(
               icon: const Icon(Icons.add, size: AppTheme.iconSizeSm),
               onPressed: onAddGoal,
@@ -210,7 +212,7 @@ class TaskFilterPanel extends StatelessWidget {
           const SizedBox(height: AppTheme.spacingMd),
           // Tags section
           _FilterSection(
-            title: 'Tags',
+            title: l10n.sidebarTags,
             trailing: IconButton(
               icon: const Icon(Icons.add, size: AppTheme.iconSizeSm),
               onPressed: onAddTag,
@@ -417,6 +419,7 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final isHighlighted = widget.isSelected || _isHovered;
 
     return MouseRegion(
@@ -434,12 +437,12 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
               ContextMenuGroup(
                 items: [
                   ContextMenuItem(
-                    label: 'Edit',
+                    label: l10n.edit,
                     icon: Icons.edit_outlined,
                     value: 'edit',
                   ),
                   ContextMenuItem(
-                    label: 'Delete',
+                    label: l10n.delete,
                     icon: Icons.delete_outline,
                     value: 'delete',
                     isDangerous: true,
@@ -499,7 +502,7 @@ class _GoalFilterItemState extends State<_GoalFilterItem> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      'Due ${_formatDate(widget.goal.dueDate)}',
+                      l10n.dueDate(_formatDate(widget.goal.dueDate)),
                       style: TextStyle(
                         fontSize: AppTheme.fontSizeXs - 1,
                         color: colors.textHint,
@@ -547,6 +550,7 @@ class _TagFilterItemState extends State<_TagFilterItem> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final tagColor = _parseColor(widget.tag.color);
     final isHighlighted = widget.isSelected || _isHovered;
 
@@ -565,12 +569,12 @@ class _TagFilterItemState extends State<_TagFilterItem> {
               ContextMenuGroup(
                 items: [
                   ContextMenuItem(
-                    label: 'Edit',
+                    label: l10n.edit,
                     icon: Icons.edit_outlined,
                     value: 'edit',
                   ),
                   ContextMenuItem(
-                    label: 'Delete',
+                    label: l10n.delete,
                     icon: Icons.delete_outline,
                     value: 'delete',
                     isDangerous: true,

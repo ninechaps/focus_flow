@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/layout/window_controls.dart';
@@ -21,22 +22,21 @@ class _LoginPageState extends State<LoginPage> {
   final PageController _pageController = PageController();
   int _currentSlide = 0;
 
-  // Product introduction slides data
-  final List<_SlideData> _slides = const [
+  List<_SlideData> _slides(AppLocalizations l10n) => [
     _SlideData(
       icon: Icons.timer_outlined,
-      title: 'Focus Timer',
-      description: 'Stay productive with Pomodoro technique and customizable focus sessions.',
+      title: l10n.loginSlideTitle1,
+      description: l10n.loginSlideDesc1,
     ),
     _SlideData(
       icon: Icons.check_circle_outline,
-      title: 'Task Management',
-      description: 'Organize your tasks efficiently with intuitive drag-and-drop interface.',
+      title: l10n.loginSlideTitle2,
+      description: l10n.loginSlideDesc2,
     ),
     _SlideData(
       icon: Icons.insights_outlined,
-      title: 'Analytics',
-      description: 'Track your productivity patterns and improve over time.',
+      title: l10n.loginSlideTitle3,
+      description: l10n.loginSlideDesc3,
     ),
   ];
 
@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> {
   void _startSlideTimer() {
     Future.delayed(const Duration(seconds: 4), () {
       if (mounted && _pageController.hasClients) {
-        final nextPage = (_currentSlide + 1) % _slides.length;
+        final nextPage = (_currentSlide + 1) % 3;
         _pageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 400),
@@ -67,6 +67,17 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  String _localizeError(AppLocalizations l10n, String errorCode) {
+    switch (errorCode) {
+      case 'empty_credentials':
+        return l10n.authEmptyCredentials;
+      case 'invalid_credentials':
+        return l10n.authInvalidCredentials;
+      default:
+        return errorCode;
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -129,6 +140,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildProductSlides() {
+    final l10n = AppLocalizations.of(context)!;
+    final slides = _slides(l10n);
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -161,7 +174,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: AppTheme.spacingMd),
                 Text(
-                  'Focus Hut',
+                  l10n.appTitle,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -180,9 +193,9 @@ class _LoginPageState extends State<LoginPage> {
                   _currentSlide = index;
                 });
               },
-              itemCount: _slides.length,
+              itemCount: slides.length,
               itemBuilder: (context, index) {
-                final slide = _slides[index];
+                final slide = slides[index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppTheme.spacingXl,
@@ -233,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                _slides.length,
+                slides.length,
                 (index) => Container(
                   width: _currentSlide == index ? 20 : 8,
                   height: 8,
@@ -255,6 +268,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildLoginForm() {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       color: colors.background,
       child: Center(
@@ -269,12 +283,12 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Welcome Back',
+                    l10n.loginWelcomeBack,
                     style: Theme.of(context).textTheme.displaySmall,
                   ),
                   const SizedBox(height: AppTheme.spacingXs),
                   Text(
-                    'Sign in to continue to Focus Hut',
+                    l10n.loginSubtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: colors.textSecondary,
                         ),
@@ -284,15 +298,15 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Username field
                   AppTextField(
-                    label: 'Username',
-                    hint: 'Enter your username',
+                    label: l10n.loginUsername,
+                    hint: l10n.loginUsernamePlaceholder,
                     controller: _usernameController,
                     prefixIcon: const Icon(Icons.person_outline, size: AppTheme.iconSizeMd),
                     keyboardType: TextInputType.text,
                     onFieldSubmitted: () => FocusScope.of(context).nextFocus(),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return '请输入用户名';
+                        return l10n.loginUsernameRequired;
                       }
                       return null;
                     },
@@ -302,8 +316,8 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Password field
                   AppTextField(
-                    label: 'Password',
-                    hint: 'Enter your password',
+                    label: l10n.loginPassword,
+                    hint: l10n.loginPasswordPlaceholder,
                     controller: _passwordController,
                     prefixIcon: const Icon(Icons.lock_outline, size: AppTheme.iconSizeMd),
                     keyboardType: TextInputType.text,
@@ -311,10 +325,10 @@ class _LoginPageState extends State<LoginPage> {
                     onFieldSubmitted: _handleLogin,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return '请输入密码';
+                        return l10n.loginPasswordRequired;
                       }
                       if (value.length < 4) {
-                        return '密码至少4位';
+                        return l10n.loginPasswordTooShort;
                       }
                       return null;
                     },
@@ -346,7 +360,7 @@ class _LoginPageState extends State<LoginPage> {
                               const SizedBox(width: AppTheme.spacingSm),
                               Expanded(
                                 child: Text(
-                                  authProvider.errorMessage!,
+                                  _localizeError(l10n, authProvider.errorMessage!),
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: AppTheme.errorColor,
                                       ),
@@ -387,7 +401,7 @@ class _LoginPageState extends State<LoginPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : const Text('Sign In'),
+                              : Text(l10n.loginSignIn),
                         ),
                       );
                     },
@@ -415,7 +429,7 @@ class _LoginPageState extends State<LoginPage> {
                         const SizedBox(width: AppTheme.spacingSm),
                         Expanded(
                           child: Text(
-                            'Demo: admin / admin123',
+                            l10n.loginDemoHint,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: colors.primary,
                                 ),

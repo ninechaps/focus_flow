@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -12,6 +13,8 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final user = authProvider.currentUser;
@@ -22,12 +25,12 @@ class ProfilePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Profile',
+                l10n.profileTitle,
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: AppTheme.spacingSm),
               Text(
-                'Manage your personal information',
+                l10n.profileSubtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -74,13 +77,13 @@ class ProfilePage extends StatelessWidget {
                         const SizedBox(height: AppTheme.spacingLg),
                         // Username
                         Text(
-                          user?.username ?? 'Unknown User',
+                          user?.username ?? l10n.profileUnknownUser,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: AppTheme.spacingXs),
                         // Email
                         Text(
-                          user?.email ?? 'No email',
+                          user?.email ?? l10n.profileNoEmail,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: colors.textSecondary,
                               ),
@@ -89,7 +92,7 @@ class ProfilePage extends StatelessWidget {
                         // Last login
                         if (user?.lastLoginTime != null)
                           Text(
-                            'Last login: ${_formatDateTime(user!.lastLoginTime!)}',
+                            l10n.profileLastLogin(_formatDateTime(user!.lastLoginTime!)),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: colors.textHint,
                                 ),

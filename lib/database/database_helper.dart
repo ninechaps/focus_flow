@@ -106,6 +106,22 @@ class DatabaseHelper {
       )
     ''');
 
+    // Create focus_sessions table
+    await db.execute('''
+      CREATE TABLE ${DatabaseConfig.tableFocusSession} (
+        ${DatabaseConfig.colId} TEXT PRIMARY KEY,
+        ${DatabaseConfig.colTaskId} TEXT NOT NULL,
+        ${DatabaseConfig.colStartedAt} TEXT NOT NULL,
+        ${DatabaseConfig.colEndedAt} TEXT,
+        ${DatabaseConfig.colDurationSeconds} INTEGER NOT NULL DEFAULT 0,
+        ${DatabaseConfig.colTargetSeconds} INTEGER NOT NULL DEFAULT 0,
+        ${DatabaseConfig.colTimerMode} TEXT NOT NULL DEFAULT 'countdown',
+        ${DatabaseConfig.colCompletionType} TEXT NOT NULL DEFAULT 'stopped',
+        ${DatabaseConfig.colCreatedAt} TEXT NOT NULL,
+        FOREIGN KEY (${DatabaseConfig.colTaskId}) REFERENCES ${DatabaseConfig.tableTask}(${DatabaseConfig.colId}) ON DELETE CASCADE
+      )
+    ''');
+
     // Create indexes for better query performance
     await db.execute('''
       CREATE INDEX idx_tasks_parent ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colParentTaskId})
@@ -124,6 +140,12 @@ class DatabaseHelper {
     ''');
     await db.execute('''
       CREATE INDEX idx_task_tags_tag ON ${DatabaseConfig.tableTaskTag}(${DatabaseConfig.colTagId})
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_focus_sessions_task ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colTaskId})
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_focus_sessions_started_at ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colStartedAt})
     ''');
 
     if (DatabaseConfig.debugMode) {
@@ -189,6 +211,34 @@ class DatabaseHelper {
         debugPrint('Database upgraded to v6 - added sort_order column');
       }
     }
+
+    // Migration to v7: Add focus_sessions table
+    if (oldVersion < 7) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS ${DatabaseConfig.tableFocusSession} (
+          ${DatabaseConfig.colId} TEXT PRIMARY KEY,
+          ${DatabaseConfig.colTaskId} TEXT NOT NULL,
+          ${DatabaseConfig.colStartedAt} TEXT NOT NULL,
+          ${DatabaseConfig.colEndedAt} TEXT,
+          ${DatabaseConfig.colDurationSeconds} INTEGER NOT NULL DEFAULT 0,
+          ${DatabaseConfig.colTargetSeconds} INTEGER NOT NULL DEFAULT 0,
+          ${DatabaseConfig.colTimerMode} TEXT NOT NULL DEFAULT 'countdown',
+          ${DatabaseConfig.colCompletionType} TEXT NOT NULL DEFAULT 'stopped',
+          ${DatabaseConfig.colCreatedAt} TEXT NOT NULL,
+          FOREIGN KEY (${DatabaseConfig.colTaskId}) REFERENCES ${DatabaseConfig.tableTask}(${DatabaseConfig.colId}) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_focus_sessions_task ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colTaskId})
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_focus_sessions_started_at ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colStartedAt})
+      ''');
+
+      if (DatabaseConfig.debugMode) {
+        debugPrint('Database upgraded to v7 - added focus_sessions table');
+      }
+    }
   }
 
   /// Clear all data from the database
@@ -197,6 +247,7 @@ class DatabaseHelper {
     final db = await database;
 
     // Delete all data in reverse order of dependencies
+    await db.delete(DatabaseConfig.tableFocusSession);
     await db.delete(DatabaseConfig.tableTaskTag);
     await db.delete(DatabaseConfig.tableTask);
     await db.delete(DatabaseConfig.tableGoal);

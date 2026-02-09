@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
@@ -59,29 +61,33 @@ class _TaskGroupState extends State<TaskGroup> {
   }
 
   String _getGroupLabel() {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
     final now = DateTime.now();
+    final dateFormat = DateFormat.MMMd(locale);
     switch (widget.title) {
       case 'Today':
-        return '今天 · ${now.month}月${now.day}日';
+        return '${l10n.groupToday} · ${dateFormat.format(now)}';
       case 'Tomorrow':
         final tomorrow = now.add(const Duration(days: 1));
-        return '明天 · ${tomorrow.month}月${tomorrow.day}日';
+        return '${l10n.groupTomorrow} · ${dateFormat.format(tomorrow)}';
       case 'This Week':
-        return '本周';
+        return l10n.groupThisWeek;
       case 'Overdue':
-        return '已逾期';
+        return l10n.groupOverdue;
       case 'Yesterday':
         final yesterday = now.subtract(const Duration(days: 1));
-        return '昨天 · ${yesterday.month}月${yesterday.day}日';
+        return '${l10n.groupYesterday} · ${dateFormat.format(yesterday)}';
       case 'Later':
-        return '以后';
+        return l10n.groupLater;
       default:
         return widget.title;
     }
   }
 
   String _getCountLabel(int count) {
-    return '$count 个任务';
+    final l10n = AppLocalizations.of(context)!;
+    return l10n.taskCount(count);
   }
 
   @override

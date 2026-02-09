@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/goal.dart';
 import '../../../models/task.dart';
@@ -20,6 +21,7 @@ class TipsPanel extends StatelessWidget {
   final String? selectedTaskId;
   final VoidCallback? onEdit;
   final ValueChanged<Task>? onFocus;
+  final bool showFocusButton;
 
   const TipsPanel({
     super.key,
@@ -29,6 +31,7 @@ class TipsPanel extends StatelessWidget {
     this.selectedTaskId,
     this.onEdit,
     this.onFocus,
+    this.showFocusButton = true,
   });
 
   Task? get _selectedTask {
@@ -89,27 +92,27 @@ class TipsPanel extends StatelessWidget {
     }
   }
 
-  String _getPriorityLabel(TaskPriority priority) {
+  String _getPriorityLabel(TaskPriority priority, AppLocalizations l10n) {
     switch (priority) {
       case TaskPriority.high:
-        return '高优先级';
+        return l10n.priorityHigh;
       case TaskPriority.medium:
-        return '中优先级';
+        return l10n.priorityMedium;
       case TaskPriority.low:
-        return '低优先级';
+        return l10n.priorityLow;
     }
   }
 
-  String _getStatusLabel(TaskStatus status) {
+  String _getStatusLabel(TaskStatus status, AppLocalizations l10n) {
     switch (status) {
       case TaskStatus.pending:
-        return '待办';
+        return l10n.statusPending;
       case TaskStatus.inProgress:
-        return '进行中';
+        return l10n.statusInProgress;
       case TaskStatus.completed:
-        return '已完成';
+        return l10n.statusCompleted;
       case TaskStatus.deleted:
-        return '已删除';
+        return l10n.statusDeleted;
     }
   }
 
@@ -159,6 +162,7 @@ class TipsPanel extends StatelessWidget {
 
   Widget _buildTaskDetails(BuildContext context, Task task) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final subtasks = _getSubtasks(task.id);
     final completedSubtasks =
         subtasks.where((t) => t.status == TaskStatus.completed).length;
@@ -193,12 +197,12 @@ class TipsPanel extends StatelessWidget {
                       Row(
                         children: [
                           _StatusBadge(
-                            label: _getPriorityLabel(task.priority),
+                            label: _getPriorityLabel(task.priority, l10n),
                             color: priorityColor,
                           ),
                           const SizedBox(width: 8),
                           _StatusBadge(
-                            label: _getStatusLabel(task.status),
+                            label: _getStatusLabel(task.status, l10n),
                             color: statusColor,
                           ),
                         ],
@@ -236,28 +240,28 @@ class TipsPanel extends StatelessWidget {
 
                 // ===== Details Section =====
                 _DetailSection(
-                  title: '详情',
+                  title: l10n.detailsSection,
                   children: [
                     if (task.goal != null)
                       _DetailField(
-                        label: '📁 目标',
+                        label: '\u{1F4C1} ${l10n.detailGoal}',
                         value: task.goal!.name,
                       ),
                     if (task.dueDate != null)
                       _DetailField(
-                        label: '📅 到期日',
+                        label: '\u{1F4C5} ${l10n.detailDueDate}',
                         value: _formatDate(task.dueDate!),
                         valueColor: _isDueSoon(task.dueDate!)
                             ? AppTheme.errorColor
                             : null,
                       ),
                     _DetailField(
-                      label: '⏱ 已专注',
+                      label: '\u23F1 ${l10n.detailFocusTime}',
                       value: _formatDuration(totalFocusTime),
                       valueColor: colors.primary,
                     ),
                     _DetailField(
-                      label: '📆 创建于',
+                      label: '\u{1F4C6} ${l10n.detailCreatedAt}',
                       value: _formatDate(task.createdAt),
                     ),
                   ],
@@ -266,7 +270,7 @@ class TipsPanel extends StatelessWidget {
                 // ===== Subtask Progress Section =====
                 if (subtasks.isNotEmpty) ...[
                   _DetailSection(
-                    title: '子任务进度',
+                    title: l10n.subtaskProgress,
                     children: [
                       _SubtaskProgressWidget(
                         completed: completedSubtasks,
@@ -276,7 +280,7 @@ class TipsPanel extends StatelessWidget {
                   ),
 
                   _DetailSection(
-                    title: '子任务',
+                    title: l10n.subtasks,
                     children: [
                       for (final subtask in subtasks)
                         _SubtaskMiniItem(
@@ -290,7 +294,7 @@ class TipsPanel extends StatelessWidget {
                 // Tags section
                 if (task.tags.isNotEmpty)
                   _DetailSection(
-                    title: '标签',
+                    title: l10n.tags,
                     children: [
                       Wrap(
                         spacing: 6,
@@ -331,21 +335,22 @@ class TipsPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: _DetailButton(
-                  label: '✏️ 编辑',
+                  label: '\u270F\uFE0F ${l10n.editButton}',
                   onTap: onEdit,
                 ),
               ),
-              const SizedBox(width: 8),
-              if (task.parentTaskId != null)
+              if (showFocusButton && task.parentTaskId != null) ...[
+                const SizedBox(width: 8),
                 Expanded(
                   child: _DetailButton(
-                    label: '▶ 开始专注',
+                    label: '\u25B6 ${l10n.startFocusButton}',
                     isPrimary: true,
                     onTap: task.status != TaskStatus.completed && onFocus != null
                         ? () => onFocus!(task)
                         : null,
                   ),
                 ),
+              ],
             ],
           ),
         ),
@@ -355,6 +360,7 @@ class TipsPanel extends StatelessWidget {
 
   Widget _buildGoalSummary(BuildContext context, Goal goal) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final goalTasks = tasks
         .where((t) => t.goalId == goal.id && t.parentTaskId == null)
         .toList();
@@ -405,18 +411,18 @@ class TipsPanel extends StatelessWidget {
           ),
 
           _DetailSection(
-            title: '详情',
+            title: l10n.detailsSection,
             children: [
               _DetailField(
-                label: '📅 到期日',
+                label: '\u{1F4C5} ${l10n.detailDueDate}',
                 value: _formatDate(goal.dueDate),
               ),
               _DetailField(
-                label: '📋 任务',
-                value: '$completedTasks/${goalTasks.length} 已完成',
+                label: '\u{1F4CB} ${l10n.detailTasks}',
+                value: l10n.completedOfTotal(completedTasks, goalTasks.length),
               ),
               _DetailField(
-                label: '⏱ 总专注',
+                label: '\u23F1 ${l10n.detailTotalFocus}',
                 value: _formatDuration(totalFocusTime),
                 valueColor: colors.primary,
               ),
@@ -425,7 +431,7 @@ class TipsPanel extends StatelessWidget {
 
           if (goalTasks.isNotEmpty) ...[
             _DetailSection(
-              title: '进度',
+              title: l10n.detailProgress,
               children: [
                 _SubtaskProgressWidget(
                   completed: completedTasks,
@@ -435,7 +441,7 @@ class TipsPanel extends StatelessWidget {
             ),
 
             _DetailSection(
-              title: '任务 (${goalTasks.length})',
+              title: l10n.tasksWithCount(goalTasks.length),
               children: [
                 for (final task in goalTasks)
                   _SubtaskMiniItem(
@@ -590,6 +596,7 @@ class _SubtaskProgressWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final progress = total > 0 ? completed / total : 0.0;
     final percent = (progress * 100).toInt();
 
@@ -629,7 +636,7 @@ class _SubtaskProgressWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '已完成 $completed / $total 个子任务',
+                  l10n.subtasksCompleted(completed, total),
                   style: TextStyle(
                     fontSize: 11,
                     color: colors.textHint,

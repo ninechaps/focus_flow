@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/task.dart';
 import '../../models/enums.dart';
 import '../../providers/task_provider.dart';
@@ -45,6 +46,7 @@ class _ListPageState extends State<ListPage> {
   Future<void> _handleAddSubtask(Task parentTask) async {
     final provider = context.read<TaskProvider>();
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final task = await showAddTaskDialog(
       context,
       availableTags: provider.tags,
@@ -57,13 +59,13 @@ class _ListPageState extends State<ListPage> {
         await provider.addTask(task);
         if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('子任务已创建'), backgroundColor: Colors.green),
+            SnackBar(content: Text(l10n.subtaskCreated), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(content: Text('创建子任务失败: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text(l10n.createSubtaskFailed('$e')), backgroundColor: Colors.red),
           );
         }
       }
@@ -73,6 +75,7 @@ class _ListPageState extends State<ListPage> {
   Future<void> _handleAddTask() async {
     final provider = context.read<TaskProvider>();
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final task = await showAddTaskDialog(
       context,
       availableTags: provider.tags,
@@ -85,13 +88,13 @@ class _ListPageState extends State<ListPage> {
         await provider.addTask(task);
         if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('任务已创建'), backgroundColor: Colors.green),
+            SnackBar(content: Text(l10n.taskCreated), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(content: Text('创建任务失败: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text(l10n.createTaskFailed('$e')), backgroundColor: Colors.red),
           );
         }
       }
@@ -103,6 +106,7 @@ class _ListPageState extends State<ListPage> {
   Future<void> _handleEditTask(Task task) async {
     final provider = context.read<TaskProvider>();
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context)!;
     final updatedTask = await showEditTaskDialog(
       context,
       task: task,
@@ -115,13 +119,13 @@ class _ListPageState extends State<ListPage> {
         await provider.updateTask(updatedTask);
         if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('任务已更新'), backgroundColor: Colors.green),
+            SnackBar(content: Text(l10n.taskUpdated), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(content: Text('更新任务失败: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text(l10n.updateTaskFailed('$e')), backgroundColor: Colors.red),
           );
         }
       }
@@ -129,19 +133,20 @@ class _ListPageState extends State<ListPage> {
   }
 
   Future<void> _handleDeleteTask(Task task) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('删除任务'),
-        content: Text('确定要删除「${task.title}」吗？此操作不可撤销。'),
+        title: Text(l10n.deleteTaskTitle),
+        content: Text(l10n.deleteTaskConfirm(task.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('取消'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('删除', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -157,13 +162,13 @@ class _ListPageState extends State<ListPage> {
         }
         if (mounted) {
           messenger.showSnackBar(
-            const SnackBar(content: Text('任务已删除'), backgroundColor: Colors.green),
+            SnackBar(content: Text(l10n.taskDeleted), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         if (mounted) {
           messenger.showSnackBar(
-            SnackBar(content: Text('删除任务失败: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text(l10n.deleteTaskFailed('$e')), backgroundColor: Colors.red),
           );
         }
       }
@@ -180,8 +185,9 @@ class _ListPageState extends State<ListPage> {
       await provider.updateTask(updated);
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('设置优先级失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.setPriorityFailed('$e')), backgroundColor: Colors.red),
         );
       }
     }
@@ -198,8 +204,9 @@ class _ListPageState extends State<ListPage> {
       await provider.updateTask(updated);
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context)!;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('设置状态失败: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text(l10n.setStatusFailed('$e')), backgroundColor: Colors.red),
         );
       }
     }
@@ -214,15 +221,16 @@ class _ListPageState extends State<ListPage> {
         }
 
         if (provider.error != null && provider.tasks.isEmpty) {
+          final l10n = AppLocalizations.of(context)!;
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Error: ${provider.error}'),
+                Text(l10n.errorPrefix(provider.error ?? '')),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => provider.init(),
-                  child: const Text('重试'),
+                  child: Text(l10n.retry),
                 ),
               ],
             ),
@@ -271,8 +279,9 @@ class _ListPageState extends State<ListPage> {
                     await provider.reorderTasks(groupKey, oldIndex, newIndex, groupTasks);
                   } catch (e) {
                     if (!mounted) return;
+                    final l10n = AppLocalizations.of(context)!;
                     messenger.showSnackBar(
-                      SnackBar(content: Text('排序失败: $e'), backgroundColor: Colors.red),
+                      SnackBar(content: Text(l10n.reorderFailed('$e')), backgroundColor: Colors.red),
                     );
                   }
                 },
@@ -283,8 +292,9 @@ class _ListPageState extends State<ListPage> {
                     await provider.reorderTasks('subtasks_${parentTask.id}', oldIndex, newIndex, subtasks);
                   } catch (e) {
                     if (!mounted) return;
+                    final l10n = AppLocalizations.of(context)!;
                     messenger.showSnackBar(
-                      SnackBar(content: Text('排序失败: $e'), backgroundColor: Colors.red),
+                      SnackBar(content: Text(l10n.reorderFailed('$e')), backgroundColor: Colors.red),
                     );
                   }
                 },

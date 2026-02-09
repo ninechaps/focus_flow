@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/app_theme.dart';
 import '../../providers/task_provider.dart';
 import '../../models/enums.dart';
@@ -27,10 +29,9 @@ class StatisticsPage extends StatelessWidget {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  /// Return a short weekday label for [date].
-  static String _weekdayLabel(DateTime date) {
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return labels[date.weekday - 1];
+  /// Return a locale-aware short weekday label for [date].
+  static String _weekdayLabel(DateTime date, String locale) {
+    return DateFormat.E(locale).format(date);
   }
 
   /// Collect *all* tasks including subtasks from the map.
@@ -116,10 +117,10 @@ class StatisticsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── 1. Title ──
-              Text('Statistics', style: Theme.of(context).textTheme.headlineMedium),
+              Text(AppLocalizations.of(context)!.statisticsTitle, style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: AppTheme.spacingSm),
               Text(
-                'Track your productivity and progress',
+                AppLocalizations.of(context)!.statisticsSubtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
               ),
               const SizedBox(height: AppTheme.spacingXl),
@@ -127,11 +128,11 @@ class StatisticsPage extends StatelessWidget {
               // ── 2. Overview cards ──
               Row(
                 children: [
-                  Expanded(child: _OverviewCard(label: 'Today Focus', value: _formatDuration(todayFocus), icon: Icons.today_rounded)),
+                  Expanded(child: _OverviewCard(label: AppLocalizations.of(context)!.todayFocus, value: _formatDuration(todayFocus), icon: Icons.today_rounded)),
                   const SizedBox(width: AppTheme.spacingMd),
-                  Expanded(child: _OverviewCard(label: 'This Week', value: _formatDuration(weekFocus), icon: Icons.date_range_rounded)),
+                  Expanded(child: _OverviewCard(label: AppLocalizations.of(context)!.thisWeek, value: _formatDuration(weekFocus), icon: Icons.date_range_rounded)),
                   const SizedBox(width: AppTheme.spacingMd),
-                  Expanded(child: _OverviewCard(label: 'Completed', value: '$completedTopLevel', icon: Icons.check_circle_outline_rounded)),
+                  Expanded(child: _OverviewCard(label: AppLocalizations.of(context)!.completed, value: '$completedTopLevel', icon: Icons.check_circle_outline_rounded)),
                 ],
               ),
               const SizedBox(height: AppTheme.spacingXl),
@@ -141,7 +142,7 @@ class StatisticsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildBarChart(context, barDays, barValues, maxBar, today),
+                    _buildBarChart(context, barDays, barValues, maxBar, today, Localizations.localeOf(context).toString()),
                     const SizedBox(height: AppTheme.spacingXl),
 
                     // ── 4. Bottom two columns ──
@@ -177,6 +178,7 @@ class StatisticsPage extends StatelessWidget {
     List<int> values,
     int maxValue,
     DateTime today,
+    String locale,
   ) {
     final colors = context.appColors;
     const double chartHeight = 160.0;
@@ -191,7 +193,7 @@ class StatisticsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Daily Focus (Last 7 Days)',
+          Text(AppLocalizations.of(context)!.dailyFocusLast7Days,
               style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: AppTheme.spacingLg),
           SizedBox(
@@ -230,7 +232,7 @@ class StatisticsPage extends StatelessWidget {
                         const SizedBox(height: 6),
                         // Day label
                         Text(
-                          _weekdayLabel(days[i]),
+                          _weekdayLabel(days[i], locale),
                           style: TextStyle(
                             fontSize: AppTheme.fontSizeXs,
                             fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
@@ -267,7 +269,7 @@ class StatisticsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Task Status', style: Theme.of(context).textTheme.headlineSmall),
+          Text(AppLocalizations.of(context)!.taskStatus, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: AppTheme.spacingLg),
 
           // Simple visual breakdown
@@ -301,15 +303,15 @@ class StatisticsPage extends StatelessWidget {
             const SizedBox(height: AppTheme.spacingLg),
           ],
 
-          _StatusRow(color: AppTheme.successColor, label: 'Completed', count: completed),
+          _StatusRow(color: AppTheme.successColor, label: AppLocalizations.of(context)!.statusCompleted, count: completed),
           const SizedBox(height: AppTheme.spacingSm),
-          _StatusRow(color: AppTheme.accentColor, label: 'In Progress', count: inProgress),
+          _StatusRow(color: AppTheme.accentColor, label: AppLocalizations.of(context)!.statusInProgress, count: inProgress),
           const SizedBox(height: AppTheme.spacingSm),
-          _StatusRow(color: colors.textHint, label: 'Pending', count: pending),
+          _StatusRow(color: colors.textHint, label: AppLocalizations.of(context)!.statusPending, count: pending),
 
           if (total == 0) ...[
             const SizedBox(height: AppTheme.spacingLg),
-            Text('No tasks yet', style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textHint)),
+            Text(AppLocalizations.of(context)!.noTasksYet, style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textHint)),
           ],
         ],
       ),
@@ -335,10 +337,10 @@ class StatisticsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Goal Progress', style: Theme.of(context).textTheme.headlineSmall),
+          Text(AppLocalizations.of(context)!.goalProgress, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: AppTheme.spacingLg),
           if (goals.isEmpty)
-            Text('No goals yet', style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textHint))
+            Text(AppLocalizations.of(context)!.noGoalsYet, style: TextStyle(fontSize: AppTheme.fontSizeSm, color: colors.textHint))
           else
             Expanded(
               child: ListView.separated(

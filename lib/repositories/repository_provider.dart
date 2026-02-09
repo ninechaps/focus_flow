@@ -1,7 +1,9 @@
 import '../database/database_helper.dart';
+import 'interfaces/focus_session_repository_interface.dart';
 import 'interfaces/task_repository_interface.dart';
 import 'interfaces/tag_repository_interface.dart';
 import 'interfaces/goal_repository_interface.dart';
+import 'sqlite/sqlite_focus_session_repository.dart';
 import 'sqlite/sqlite_task_repository.dart';
 import 'sqlite/sqlite_tag_repository.dart';
 import 'sqlite/sqlite_goal_repository.dart';
@@ -14,6 +16,7 @@ class RepositoryProvider {
   late final ITaskRepository _taskRepository;
   late final ITagRepository _tagRepository;
   late final IGoalRepository _goalRepository;
+  late final IFocusSessionRepository _focusSessionRepository;
 
   bool _initialized = false;
 
@@ -34,6 +37,7 @@ class RepositoryProvider {
     _taskRepository = SqliteTaskRepository();
     _tagRepository = SqliteTagRepository();
     _goalRepository = SqliteGoalRepository();
+    _focusSessionRepository = SqliteFocusSessionRepository();
 
     _initialized = true;
   }
@@ -54,6 +58,12 @@ class RepositoryProvider {
   IGoalRepository get goalRepository {
     _ensureInitialized();
     return _goalRepository;
+  }
+
+  /// Get focus session repository
+  IFocusSessionRepository get focusSessionRepository {
+    _ensureInitialized();
+    return _focusSessionRepository;
   }
 
   void _ensureInitialized() {

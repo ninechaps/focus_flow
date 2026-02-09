@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
@@ -48,6 +49,7 @@ class StatusTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = AppLocalizations.of(context)!;
     final counts = _calculateCounts();
 
     return Container(
@@ -63,7 +65,7 @@ class StatusTabs extends StatelessWidget {
       child: Row(
         children: [
           _StatusTab(
-            label: '待办',
+            label: l10n.statusPending,
             value: 'pending',
             count: counts['pending'] ?? 0,
             isSelected: selectedStatus == 'pending',
@@ -72,7 +74,7 @@ class StatusTabs extends StatelessWidget {
             ),
           ),
           _StatusTab(
-            label: '进行中',
+            label: l10n.statusInProgress,
             value: 'in_progress',
             count: counts['in_progress'] ?? 0,
             isSelected: selectedStatus == 'in_progress',
@@ -81,7 +83,7 @@ class StatusTabs extends StatelessWidget {
             ),
           ),
           _StatusTab(
-            label: '已完成',
+            label: l10n.statusCompleted,
             value: 'completed',
             count: counts['completed'] ?? 0,
             isSelected: selectedStatus == 'completed',
