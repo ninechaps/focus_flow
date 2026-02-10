@@ -275,11 +275,11 @@ class _ListPageState extends State<ListPage> {
                 onSetStatus: _handleSetStatus,
                 onReorder: (groupKey, oldIndex, newIndex, groupTasks) async {
                   final messenger = ScaffoldMessenger.of(context);
+                  final l10n = AppLocalizations.of(context)!;
                   try {
                     await provider.reorderTasks(groupKey, oldIndex, newIndex, groupTasks);
                   } catch (e) {
                     if (!mounted) return;
-                    final l10n = AppLocalizations.of(context)!;
                     messenger.showSnackBar(
                       SnackBar(content: Text(l10n.reorderFailed('$e')), backgroundColor: Colors.red),
                     );
@@ -287,12 +287,12 @@ class _ListPageState extends State<ListPage> {
                 },
                 onSubtasksReorder: (parentTask, oldIndex, newIndex) async {
                   final messenger = ScaffoldMessenger.of(context);
+                  final l10n = AppLocalizations.of(context)!;
                   try {
                     final subtasks = provider.subtasksMap[parentTask.id] ?? [];
                     await provider.reorderTasks('subtasks_${parentTask.id}', oldIndex, newIndex, subtasks);
                   } catch (e) {
                     if (!mounted) return;
-                    final l10n = AppLocalizations.of(context)!;
                     messenger.showSnackBar(
                       SnackBar(content: Text(l10n.reorderFailed('$e')), backgroundColor: Colors.red),
                     );

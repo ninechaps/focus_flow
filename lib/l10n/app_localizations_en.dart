@@ -826,4 +826,50 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get authInvalidCredentials =>
       'Invalid username or password\nCorrect username: admin, password: admin123';
+
+  @override
+  String get scheduleTabPlan => 'Plan';
+
+  @override
+  String get scheduleTabReview => 'Review';
+
+  @override
+  String get scheduleQuickAdd => 'Quick Add Task';
+
+  @override
+  String get scheduleNoSessions => 'No focus sessions this day';
+
+  @override
+  String get scheduleTotalFocus => 'Total Focus';
+
+  @override
+  String get scheduleFocusCount => 'Sessions';
+
+  @override
+  String get scheduleTaskRescheduled => 'Task rescheduled';
+
+  @override
+  String get scheduleRescheduleDate => 'Reschedule';
+
+  @override
+  String get scheduleSetPriority => 'Set Priority';
+
+  @override
+  String get scheduleSetStatus => 'Set Status';
+
+  @override
+  String get scheduleStartFocus => 'Start Focus';
+
+  @override
+  String get scheduleUnplanned => 'Unplanned';
+
+  @override
+  String scheduleFocusDuration(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String scheduleFocusDurationHours(int hours, int minutes) {
+    return '${hours}h${minutes}m';
+  }
 }

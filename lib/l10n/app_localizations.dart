@@ -1621,6 +1621,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Invalid username or password\nCorrect username: admin, password: admin123'**
   String get authInvalidCredentials;
+
+  /// No description provided for @scheduleTabPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get scheduleTabPlan;
+
+  /// No description provided for @scheduleTabReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review'**
+  String get scheduleTabReview;
+
+  /// No description provided for @scheduleQuickAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Add Task'**
+  String get scheduleQuickAdd;
+
+  /// No description provided for @scheduleNoSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No focus sessions this day'**
+  String get scheduleNoSessions;
+
+  /// No description provided for @scheduleTotalFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Focus'**
+  String get scheduleTotalFocus;
+
+  /// No description provided for @scheduleFocusCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get scheduleFocusCount;
+
+  /// No description provided for @scheduleTaskRescheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Task rescheduled'**
+  String get scheduleTaskRescheduled;
+
+  /// No description provided for @scheduleRescheduleDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Reschedule'**
+  String get scheduleRescheduleDate;
+
+  /// No description provided for @scheduleSetPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Priority'**
+  String get scheduleSetPriority;
+
+  /// No description provided for @scheduleSetStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Status'**
+  String get scheduleSetStatus;
+
+  /// No description provided for @scheduleStartFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Focus'**
+  String get scheduleStartFocus;
+
+  /// No description provided for @scheduleUnplanned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unplanned'**
+  String get scheduleUnplanned;
+
+  /// No description provided for @scheduleFocusDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String scheduleFocusDuration(int minutes);
+
+  /// No description provided for @scheduleFocusDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h{minutes}m'**
+  String scheduleFocusDurationHours(int hours, int minutes);
 }
 
 class _AppLocalizationsDelegate

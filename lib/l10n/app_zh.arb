@@ -295,5 +295,20 @@
   "datePickerConfirm": "确定",
 
   "authEmptyCredentials": "用户名和密码不能为空",
-  "authInvalidCredentials": "用户名或密码错误\n正确的用户名: admin, 密码: admin123"
+  "authInvalidCredentials": "用户名或密码错误\n正确的用户名: admin, 密码: admin123",
+
+  "scheduleTabPlan": "计划",
+  "scheduleTabReview": "回顾",
+  "scheduleQuickAdd": "快速添加任务",
+  "scheduleNoSessions": "当天没有专注记录",
+  "scheduleTotalFocus": "总专注时长",
+  "scheduleFocusCount": "专注次数",
+  "scheduleTaskRescheduled": "任务已重新安排",
+  "scheduleRescheduleDate": "重新安排日期",
+  "scheduleSetPriority": "设置优先级",
+  "scheduleSetStatus": "设置状态",
+  "scheduleStartFocus": "开始专注",
+  "scheduleUnplanned": "未安排",
+  "scheduleFocusDuration": "{minutes}分钟",
+  "scheduleFocusDurationHours": "{hours}小时{minutes}分钟"
 }

@@ -17,6 +17,8 @@ class AddTaskDialog extends StatefulWidget {
   final List<Goal> availableGoals;
   final String? parentTaskId;
   final String? defaultGoalId;
+  /// 默认截止日期（用于从日程页快速创建任务）
+  final DateTime? defaultDueDate;
   /// 传入时为编辑模式
   final Task? editTask;
 
@@ -26,6 +28,7 @@ class AddTaskDialog extends StatefulWidget {
     this.availableGoals = const [],
     this.parentTaskId,
     this.defaultGoalId,
+    this.defaultDueDate,
     this.editTask,
   });
 
@@ -59,6 +62,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
       _selectedTagIds.addAll(task.tags.map((t) => t.id));
     } else {
       _selectedGoalId = widget.defaultGoalId;
+      _dueDate = widget.defaultDueDate;
     }
   }
 
@@ -454,6 +458,7 @@ Future<Task?> showAddTaskDialog(
   List<Goal> availableGoals = const [],
   String? parentTaskId,
   String? defaultGoalId,
+  DateTime? defaultDueDate,
 }) {
   return showDialog<Task>(
     context: context,
@@ -463,6 +468,7 @@ Future<Task?> showAddTaskDialog(
       availableGoals: availableGoals,
       parentTaskId: parentTaskId,
       defaultGoalId: defaultGoalId,
+      defaultDueDate: defaultDueDate,
     ),
   );
 }

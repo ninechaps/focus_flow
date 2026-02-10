@@ -13,7 +13,7 @@ import './providers/locale_provider.dart';
 import './widgets/auth_wrapper.dart';
 import './theme/app_theme.dart';
 import './repositories/repository_provider.dart';
-import './services/platform-integration-service.dart';
+import './services/platform_integration_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

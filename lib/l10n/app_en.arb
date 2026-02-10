@@ -319,5 +319,22 @@
   "datePickerConfirm": "Confirm",
 
   "authEmptyCredentials": "Username and password cannot be empty",
-  "authInvalidCredentials": "Invalid username or password\nCorrect username: admin, password: admin123"
+  "authInvalidCredentials": "Invalid username or password\nCorrect username: admin, password: admin123",
+
+  "scheduleTabPlan": "Plan",
+  "scheduleTabReview": "Review",
+  "scheduleQuickAdd": "Quick Add Task",
+  "scheduleNoSessions": "No focus sessions this day",
+  "scheduleTotalFocus": "Total Focus",
+  "scheduleFocusCount": "Sessions",
+  "scheduleTaskRescheduled": "Task rescheduled",
+  "scheduleRescheduleDate": "Reschedule",
+  "scheduleSetPriority": "Set Priority",
+  "scheduleSetStatus": "Set Status",
+  "scheduleStartFocus": "Start Focus",
+  "scheduleUnplanned": "Unplanned",
+  "scheduleFocusDuration": "{minutes}m",
+  "@scheduleFocusDuration": { "placeholders": { "minutes": { "type": "int" } } },
+  "scheduleFocusDurationHours": "{hours}h{minutes}m",
+  "@scheduleFocusDurationHours": { "placeholders": { "hours": { "type": "int" }, "minutes": { "type": "int" } } }
 }

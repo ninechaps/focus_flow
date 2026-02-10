@@ -6,9 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/focus_provider.dart';
 import '../providers/task_provider.dart';
-import 'hotkey-service.dart';
+import 'hotkey_service.dart';
 import 'native_tray_service.dart';
-import 'notification-service.dart';
+import 'notification_service.dart';
 
 /// Localized strings used by the platform integration service.
 /// Updated when the locale changes via [updateLocalizedStrings].
