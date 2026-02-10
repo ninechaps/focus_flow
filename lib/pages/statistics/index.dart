@@ -142,7 +142,7 @@ class StatisticsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildBarChart(context, barDays, barValues, maxBar, today, Localizations.localeOf(context).toString()),
+                    Expanded(child: _buildBarChart(context, barDays, barValues, maxBar, today, Localizations.localeOf(context).toString())),
                     const SizedBox(height: AppTheme.spacingXl),
 
                     // ── 4. Bottom two columns ──
@@ -181,8 +181,6 @@ class StatisticsPage extends StatelessWidget {
     String locale,
   ) {
     final colors = context.appColors;
-    const double chartHeight = 160.0;
-
     return Container(
       padding: const EdgeInsets.all(AppTheme.spacingLg),
       decoration: BoxDecoration(
@@ -196,13 +194,12 @@ class StatisticsPage extends StatelessWidget {
           Text(AppLocalizations.of(context)!.dailyFocusLast7Days,
               style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: AppTheme.spacingLg),
-          SizedBox(
-            height: chartHeight + 28, // chart + label row
+          Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: List.generate(days.length, (i) {
                 final isToday = _isSameDay(days[i], today);
-                final barHeight = maxValue > 0 ? (values[i] / maxValue) * chartHeight : 0.0;
+                final ratio = maxValue > 0 ? values[i] / maxValue : 0.0;
                 return Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -221,14 +218,19 @@ class StatisticsPage extends StatelessWidget {
                               ),
                             ),
                           ),
-                        // Bar
-                        Container(
-                          height: barHeight < 4 && values[i] > 0 ? 4 : barHeight,
-                          decoration: BoxDecoration(
-                            color: isToday ? AppTheme.primaryColor.shade700 : colors.primary,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                        // Bar — use Expanded with flex to fill proportional space
+                        Flexible(
+                          flex: (ratio * 100).round().clamp(1, 100),
+                          child: Container(
+                            constraints: const BoxConstraints(minHeight: 4),
+                            decoration: BoxDecoration(
+                              color: isToday ? AppTheme.primaryColor.shade700 : colors.primary,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                            ),
                           ),
                         ),
+                        // Spacer for zero-value columns to push content to bottom
+                        if (values[i] == 0) const Spacer(),
                         const SizedBox(height: 6),
                         // Day label
                         Text(

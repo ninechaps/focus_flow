@@ -818,4 +818,50 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get authInvalidCredentials => '用户名或密码错误\n正确的用户名: admin, 密码: admin123';
+
+  @override
+  String get scheduleTabPlan => '计划';
+
+  @override
+  String get scheduleTabReview => '回顾';
+
+  @override
+  String get scheduleQuickAdd => '快速添加任务';
+
+  @override
+  String get scheduleNoSessions => '当天没有专注记录';
+
+  @override
+  String get scheduleTotalFocus => '总专注时长';
+
+  @override
+  String get scheduleFocusCount => '专注次数';
+
+  @override
+  String get scheduleTaskRescheduled => '任务已重新安排';
+
+  @override
+  String get scheduleRescheduleDate => '重新安排日期';
+
+  @override
+  String get scheduleSetPriority => '设置优先级';
+
+  @override
+  String get scheduleSetStatus => '设置状态';
+
+  @override
+  String get scheduleStartFocus => '开始专注';
+
+  @override
+  String get scheduleUnplanned => '未安排';
+
+  @override
+  String scheduleFocusDuration(int minutes) {
+    return '$minutes分钟';
+  }
+
+  @override
+  String scheduleFocusDurationHours(int hours, int minutes) {
+    return '$hours小时$minutes分钟';
+  }
 }

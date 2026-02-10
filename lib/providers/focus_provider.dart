@@ -424,6 +424,20 @@ class FocusProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Get focus sessions within a date range
+  Future<List<FocusSession>> getSessionsByDateRange(DateTime start, DateTime end) async {
+    try {
+      final response = await _sessionRepository.getByDateRange(start, end);
+      if (response.isSuccess && response.data != null) {
+        return response.data!;
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Failed to load sessions by date range: $e');
+      return [];
+    }
+  }
+
   /// Load session history for a specific task
   Future<void> _loadTaskSessions(String taskId) async {
     try {
