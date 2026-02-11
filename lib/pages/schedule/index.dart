@@ -9,14 +9,13 @@ import '../../providers/focus_provider.dart';
 import '../../models/task.dart';
 import '../../models/enums.dart';
 import '../../models/focus_session.dart';
+import '../../widgets/context_menu.dart';
 import '../list/widgets/add_task_dialog.dart';
 import 'widgets/calendar_panel.dart';
-import 'widgets/schedule_tabs.dart';
-import 'widgets/plan_panel.dart';
 import 'widgets/review_panel.dart';
-import 'widgets/schedule_task_item.dart';
+import 'widgets/task_detail_drawer.dart';
 
-/// Schedule 页面 — 日历 + 计划/回顾 面板
+/// Schedule 页面 — 全宽日历视图 + 右侧滑出详情面板
 class SchedulePage extends StatefulWidget {
   const SchedulePage({super.key});
 
@@ -27,7 +26,9 @@ class SchedulePage extends StatefulWidget {
 class _SchedulePageState extends State<SchedulePage> {
   late DateTime _selectedDate;
   late DateTime _currentMonth;
-  int _selectedTab = 0; // 0 = Plan, 1 = Review
+
+  /// 选中的任务，用于右侧滑出详情面板
+  Task? _selectedTask;
 
   /// 当月专注数据
   Map<DateTime, int> _focusDurationMap = {};
@@ -83,26 +84,43 @@ class _SchedulePageState extends State<SchedulePage> {
         .toList();
   }
 
-  /// 构建日期→任务映射
-  Map<DateTime, List<Task>> _buildDateTaskMap(List<Task> tasks) {
+  /// 构建日期→任务映射，包含过期任务继承和无日期任务逻辑
+  Map<DateTime, List<Task>> _buildDateTaskMap(
+    List<Task> tasksWithDueDate,
+    List<Task> allTasks,
+  ) {
+    final now = DateTime.now();
+    final todayKey = DateTime(now.year, now.month, now.day);
     final map = <DateTime, List<Task>>{};
-    for (final task in tasks) {
+
+    // 1. 有 dueDate 的任务按日期分组
+    for (final task in tasksWithDueDate) {
       final d = task.dueDate!;
       final key = DateTime(d.year, d.month, d.day);
       (map[key] ??= []).add(task);
-    }
-    return map;
-  }
 
-  /// 获取没有 dueDate 的待办任务（未安排的任务）
-  List<Task> _getUnplannedTasks(List<Task> tasks) {
-    return tasks
-        .where((t) =>
-            t.parentTaskId == null &&
-            t.status != TaskStatus.deleted &&
-            t.status != TaskStatus.completed &&
-            t.dueDate == null)
-        .toList();
+      // 过期任务继承：dueDate 在今天之前且未完成，也加入今天的列表
+      if (key.isBefore(todayKey) &&
+          task.status != TaskStatus.completed &&
+          task.status != TaskStatus.deleted) {
+        final todayTasks = map[todayKey] ??= [];
+        if (!todayTasks.contains(task)) {
+          todayTasks.add(task);
+        }
+      }
+    }
+
+    // 2. 没有 dueDate 的未完成顶层任务，显示在今天
+    final unscheduledTasks = allTasks.where((t) =>
+        t.parentTaskId == null &&
+        t.dueDate == null &&
+        t.status != TaskStatus.completed &&
+        t.status != TaskStatus.deleted);
+    for (final task in unscheduledTasks) {
+      (map[todayKey] ??= []).add(task);
+    }
+
+    return map;
   }
 
   /// 构建 taskId→Task 映射（用于回顾面板）
@@ -143,7 +161,22 @@ class _SchedulePageState extends State<SchedulePage> {
   void _selectDate(DateTime date) {
     setState(() {
       _selectedDate = date;
+      _selectedTask = null;
       _updateSessionsForSelectedDate();
+    });
+  }
+
+  // --- 任务条点击 ---
+
+  void _onTaskTap(Task task) {
+    setState(() {
+      _selectedTask = task;
+    });
+  }
+
+  void _closeTaskDetail() {
+    setState(() {
+      _selectedTask = null;
     });
   }
 
@@ -180,121 +213,175 @@ class _SchedulePageState extends State<SchedulePage> {
     }
   }
 
-  // --- 任务操作 ---
+  // --- 日期右键菜单（ContextMenu.show + 循环实现切换） ---
 
-  Future<void> _handleTaskAction(Task task, ScheduleTaskAction action) async {
-    final taskProvider = context.read<TaskProvider>();
+  Future<void> _onDateContextMenu(DateTime date, Offset position) async {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
 
+    final groups = [
+      ContextMenuGroup<String>(
+        items: [
+          ContextMenuItem(
+            label: l10n.scheduleAddTaskToDate,
+            icon: Icons.add_task,
+            value: 'add_task',
+          ),
+          ContextMenuItem(
+            label: l10n.scheduleViewReview,
+            icon: Icons.assessment_outlined,
+            value: 'view_review',
+          ),
+          ContextMenuItem(
+            label: l10n.scheduleGoToDate,
+            icon: Icons.today,
+            value: 'go_to_date',
+          ),
+        ],
+      ),
+    ];
+
+    // 循环：如果用户在屏障上右键，返回 ContextMenuSecondaryTap，
+    // 此时关闭当前菜单并在新位置重新显示
+    var currentPosition = position;
+    while (mounted) {
+      final result = await ContextMenu.show<String>(
+        context: context,
+        groups: groups,
+        position: currentPosition,
+      );
+
+      if (result is ContextMenuSecondaryTap) {
+        // 用户在菜单外右键 → 在新位置重新打开菜单
+        currentPosition = result.position;
+        continue;
+      }
+
+      // 用户选择了菜单项或点击空白关闭
+      if (result is String) {
+        _handleContextMenuAction(result, date);
+      }
+      break;
+    }
+  }
+
+  Future<void> _handleContextMenuAction(String action, DateTime date) async {
     switch (action) {
-      case ScheduleTaskAction.edit:
-        final result = await showEditTaskDialog(
-          context,
-          task: task,
-          availableTags: taskProvider.tags,
-          availableGoals: taskProvider.goals,
-        );
-        if (result != null) {
-          await taskProvider.updateTask(result);
-        }
-      case ScheduleTaskAction.startFocus:
-        if (mounted) context.go('/app/focus/${task.id}');
-      case ScheduleTaskAction.setPriorityHigh:
-        await _updateTaskPriority(task, TaskPriority.high);
-      case ScheduleTaskAction.setPriorityMedium:
-        await _updateTaskPriority(task, TaskPriority.medium);
-      case ScheduleTaskAction.setPriorityLow:
-        await _updateTaskPriority(task, TaskPriority.low);
-      case ScheduleTaskAction.setStatusPending:
-        await _updateTaskStatus(task, TaskStatus.pending);
-      case ScheduleTaskAction.setStatusInProgress:
-        await _updateTaskStatus(task, TaskStatus.inProgress);
-      case ScheduleTaskAction.setStatusCompleted:
-        await _updateTaskStatus(task, TaskStatus.completed);
-      case ScheduleTaskAction.reschedule:
-        await _showReschedulePicker(task);
-      case ScheduleTaskAction.delete:
-        await taskProvider.deleteTask(task.id);
+      case 'add_task':
+        await _addTaskToDate(date);
+      case 'view_review':
+        _showReviewDialog(date);
+      case 'go_to_date':
+        _navigateToDate(date);
     }
   }
 
-  Future<void> _updateTaskPriority(Task task, TaskPriority priority) async {
-    final taskProvider = context.read<TaskProvider>();
-    final updated = Task(
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
-      parentTaskId: task.parentTaskId,
-      goalId: task.goalId,
-      goal: task.goal,
-      priority: priority,
-      status: task.status,
-      tags: task.tags,
-      focusDuration: task.focusDuration,
-      sortOrder: task.sortOrder,
-      completedAt: task.completedAt,
-      createdAt: task.createdAt,
-      updatedAt: DateTime.now(),
-    );
-    await taskProvider.updateTask(updated);
-  }
-
-  Future<void> _updateTaskStatus(Task task, TaskStatus status) async {
-    final taskProvider = context.read<TaskProvider>();
-    final updated = Task(
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      dueDate: task.dueDate,
-      parentTaskId: task.parentTaskId,
-      goalId: task.goalId,
-      goal: task.goal,
-      priority: task.priority,
-      status: status,
-      tags: task.tags,
-      focusDuration: task.focusDuration,
-      sortOrder: task.sortOrder,
-      completedAt: status == TaskStatus.completed ? DateTime.now() : task.completedAt,
-      createdAt: task.createdAt,
-      updatedAt: DateTime.now(),
-    );
-    await taskProvider.updateTask(updated);
-  }
-
-  Future<void> _showReschedulePicker(Task task) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: task.dueDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      await _onTaskDropped(task, picked);
-    }
-  }
-
-  ValueChanged<TaskStatus> _onStatusChanged(Task task) {
-    return (status) => _updateTaskStatus(task, status);
-  }
-
-  // --- 快速添加 ---
-
-  Future<void> _onQuickAdd() async {
+  Future<void> _addTaskToDate(DateTime date) async {
     final taskProvider = context.read<TaskProvider>();
     final result = await showAddTaskDialog(
       context,
       availableTags: taskProvider.tags,
       availableGoals: taskProvider.goals,
-      defaultDueDate: _selectedDate,
+      defaultDueDate: date,
     );
     if (result != null) {
       await taskProvider.addTask(result);
     }
   }
 
-  String _formatSelectedDate(BuildContext context, DateTime date) {
+  void _showReviewDialog(DateTime date) {
+    setState(() {
+      _selectedDate = date;
+      _updateSessionsForSelectedDate();
+    });
+
+    final taskProvider = context.read<TaskProvider>();
+    final taskIdMap = _buildTaskIdMap(taskProvider.tasks);
+    final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toString();
-    return DateFormat.MMMEd(locale).format(date);
+    final dateTitle = DateFormat.MMMEd(locale).format(date);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final colors = context.appColors;
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          ),
+          child: SizedBox(
+            width: 400,
+            height: 500,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppTheme.spacingLg),
+                  child: Row(
+                    children: [
+                      Text(
+                        '$dateTitle — ${l10n.scheduleTabReview}',
+                        style: TextStyle(
+                          fontSize: AppTheme.fontSizeLg,
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, size: AppTheme.iconSizeMd),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: colors.divider),
+                Expanded(
+                  child: ReviewPanel(
+                    sessions: _sessionsForSelectedDate,
+                    taskMap: taskIdMap,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _navigateToDate(DateTime date) {
+    setState(() {
+      _currentMonth = DateTime(date.year, date.month);
+      _selectedDate = DateTime(date.year, date.month, date.day);
+      _updateSessionsForSelectedDate();
+    });
+    _loadFocusData();
+  }
+
+  // --- 任务详情面板操作 ---
+
+  Future<void> _onEditSelectedTask() async {
+    if (_selectedTask == null) return;
+    final taskProvider = context.read<TaskProvider>();
+    final result = await showEditTaskDialog(
+      context,
+      task: _selectedTask!,
+      availableTags: taskProvider.tags,
+      availableGoals: taskProvider.goals,
+    );
+    if (result != null) {
+      await taskProvider.updateTask(result);
+      if (mounted) {
+        final updated = taskProvider.tasks.where((t) => t.id == result.id).firstOrNull;
+        setState(() {
+          _selectedTask = updated;
+        });
+      }
+    }
+  }
+
+  void _onFocusSelectedTask(Task task) {
+    if (mounted) context.go('/app/focus/${task.id}');
   }
 
   @override
@@ -303,18 +390,15 @@ class _SchedulePageState extends State<SchedulePage> {
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
         final validTasks = _filterTasks(provider.tasks);
-        final dateTaskMap = _buildDateTaskMap(validTasks);
-        final tasksForDate = dateTaskMap[_selectedDate] ?? [];
-        final unplannedTasks = _getUnplannedTasks(provider.tasks);
-        final taskIdMap = _buildTaskIdMap(provider.tasks);
+        final dateTaskMap = _buildDateTaskMap(validTasks, provider.tasks);
 
         return Container(
           color: colors.background,
-          child: Row(
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              // Left: Calendar
-              Expanded(
-                flex: 3,
+              // 全宽日历
+              Positioned.fill(
                 child: CalendarPanel(
                   currentMonth: _currentMonth,
                   selectedDate: _selectedDate,
@@ -325,76 +409,23 @@ class _SchedulePageState extends State<SchedulePage> {
                   onToday: _goToToday,
                   onSelectDate: _selectDate,
                   onTaskDropped: _onTaskDropped,
+                  onTaskTap: _onTaskTap,
+                  onDateContextMenu: _onDateContextMenu,
                 ),
               ),
-              VerticalDivider(width: 1, color: colors.divider),
-              // Right: Plan/Review panel
-              Expanded(
-                flex: 2,
-                child: _buildRightPanel(colors, tasksForDate, unplannedTasks, taskIdMap),
+              // 右侧滑出详情面板
+              TaskDetailDrawer(
+                selectedTask: _selectedTask,
+                goals: provider.goals,
+                tasks: provider.tasks,
+                onEdit: _onEditSelectedTask,
+                onFocus: _onFocusSelectedTask,
+                onClose: _closeTaskDetail,
               ),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _buildRightPanel(
-    AppColors colors,
-    List<Task> tasksForDate,
-    List<Task> unplannedTasks,
-    Map<String, Task> taskIdMap,
-  ) {
-    return Container(
-      margin: const EdgeInsets.all(AppTheme.spacingXl),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: colors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header: date title + tabs
-          Padding(
-            padding: const EdgeInsets.all(AppTheme.spacingLg),
-            child: Row(
-              children: [
-                Text(
-                  _formatSelectedDate(context, _selectedDate),
-                  style: TextStyle(
-                    fontSize: AppTheme.fontSizeLg,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                ScheduleTabs(
-                  selectedIndex: _selectedTab,
-                  onChanged: (index) => setState(() => _selectedTab = index),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: colors.divider),
-          // Panel content
-          Expanded(
-            child: _selectedTab == 0
-                ? PlanPanel(
-                    tasks: tasksForDate,
-                    unplannedTasks: unplannedTasks,
-                    onStatusChanged: _onStatusChanged,
-                    onAction: _handleTaskAction,
-                    onQuickAdd: _onQuickAdd,
-                  )
-                : ReviewPanel(
-                    sessions: _sessionsForSelectedDate,
-                    taskMap: taskIdMap,
-                  ),
-          ),
-        ],
-      ),
     );
   }
 }

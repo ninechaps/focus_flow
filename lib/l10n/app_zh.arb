@@ -310,5 +310,10 @@
   "scheduleStartFocus": "开始专注",
   "scheduleUnplanned": "未安排",
   "scheduleFocusDuration": "{minutes}分钟",
-  "scheduleFocusDurationHours": "{hours}小时{minutes}分钟"
+  "scheduleFocusDurationHours": "{hours}小时{minutes}分钟",
+
+  "scheduleAddTaskToDate": "添加任务到该日期",
+  "scheduleViewReview": "查看专注回顾",
+  "scheduleGoToDate": "导航到该日期",
+  "scheduleOverdueTask": "已过期"
 }

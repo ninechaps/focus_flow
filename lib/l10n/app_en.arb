@@ -336,5 +336,10 @@
   "scheduleFocusDuration": "{minutes}m",
   "@scheduleFocusDuration": { "placeholders": { "minutes": { "type": "int" } } },
   "scheduleFocusDurationHours": "{hours}h{minutes}m",
-  "@scheduleFocusDurationHours": { "placeholders": { "hours": { "type": "int" }, "minutes": { "type": "int" } } }
+  "@scheduleFocusDurationHours": { "placeholders": { "hours": { "type": "int" }, "minutes": { "type": "int" } } },
+
+  "scheduleAddTaskToDate": "Add task to this date",
+  "scheduleViewReview": "View focus review",
+  "scheduleGoToDate": "Go to this date",
+  "scheduleOverdueTask": "Overdue"
 }

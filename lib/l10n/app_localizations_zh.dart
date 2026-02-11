@@ -864,4 +864,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String scheduleFocusDurationHours(int hours, int minutes) {
     return '$hours小时$minutes分钟';
   }
+
+  @override
+  String get scheduleAddTaskToDate => '添加任务到该日期';
+
+  @override
+  String get scheduleViewReview => '查看专注回顾';
+
+  @override
+  String get scheduleGoToDate => '导航到该日期';
+
+  @override
+  String get scheduleOverdueTask => '已过期';
 }
