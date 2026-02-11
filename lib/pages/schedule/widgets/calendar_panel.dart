@@ -5,7 +5,7 @@ import '../../../theme/app_theme.dart';
 import '../../../models/task.dart';
 import '../../../models/enums.dart';
 
-/// 日历面板 — 含月导航、周标题、日期网格、专注时长指示和 DragTarget
+/// 日历面板 — 含月导航、周标题、日期网格（带任务条）和 DragTarget
 class CalendarPanel extends StatelessWidget {
   final DateTime currentMonth;
   final DateTime selectedDate;
@@ -16,6 +16,8 @@ class CalendarPanel extends StatelessWidget {
   final VoidCallback onToday;
   final ValueChanged<DateTime> onSelectDate;
   final void Function(Task task, DateTime date) onTaskDropped;
+  final ValueChanged<Task>? onTaskTap;
+  final void Function(DateTime date, Offset position)? onDateContextMenu;
 
   const CalendarPanel({
     super.key,
@@ -28,6 +30,8 @@ class CalendarPanel extends StatelessWidget {
     required this.onToday,
     required this.onSelectDate,
     required this.onTaskDropped,
+    this.onTaskTap,
+    this.onDateContextMenu,
   });
 
   static const _priorityHigh = Color(0xFFEF4444);
@@ -63,15 +67,6 @@ class CalendarPanel extends StatelessWidget {
       case TaskPriority.low:
         return _priorityLow;
     }
-  }
-
-  String _formatDuration(BuildContext context, int totalSeconds) {
-    final l10n = AppLocalizations.of(context)!;
-    final minutes = totalSeconds ~/ 60;
-    if (minutes >= 60) {
-      return l10n.scheduleFocusDurationHours(minutes ~/ 60, minutes % 60);
-    }
-    return l10n.scheduleFocusDuration(minutes);
   }
 
   @override
@@ -233,15 +228,6 @@ class CalendarPanel extends StatelessWidget {
     final isSelected = _isSameDay(date, selectedDate);
     final isInMonth = _isCurrentMonth(date);
     final tasks = dateTaskMap[date] ?? [];
-    final focusSeconds = focusDurationMap[date] ?? 0;
-
-    final priorities = <TaskPriority>{};
-    for (final t in tasks) {
-      priorities.add(t.priority);
-      if (priorities.length >= 3) break;
-    }
-    final sortedPriorities = priorities.toList()
-      ..sort((a, b) => a.index.compareTo(b.index));
 
     return DragTarget<Task>(
       onWillAcceptWithDetails: (details) => isInMonth,
@@ -250,81 +236,238 @@ class CalendarPanel extends StatelessWidget {
         final isDragOver = candidateData.isNotEmpty;
         return GestureDetector(
           onTap: () => onSelectDate(date),
+          onSecondaryTapUp: onDateContextMenu != null
+              ? (details) => onDateContextMenu!(date, details.globalPosition)
+              : null,
           child: Container(
-            margin: const EdgeInsets.all(AppTheme.spacingXs),
+            margin: const EdgeInsets.all(1),
             decoration: BoxDecoration(
-              color: isSelected && !isToday
-                  ? colors.primaryLight
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              color: isToday
+                  ? colors.primary.withValues(alpha: 0.08)
+                  : isSelected
+                      ? colors.primaryLight
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
               border: isDragOver
                   ? Border.all(color: colors.primary, width: 2)
                   : null,
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Date number
-                Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: isToday
-                      ? BoxDecoration(
-                          color: colors.primary,
-                          shape: BoxShape.circle,
-                        )
-                      : null,
-                  child: Text(
-                    '${date.day}',
-                    style: TextStyle(
-                      fontSize: AppTheme.fontSizeSm,
-                      fontWeight: isToday || isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isToday
-                          ? Colors.white
-                          : isInMonth
-                              ? colors.textPrimary
-                              : colors.textHint,
-                    ),
-                  ),
+                // 日期行
+                _buildDateHeader(colors, date, isToday, isSelected, isInMonth),
+                // 任务条列表
+                Expanded(
+                  child: _buildTaskBars(context, tasks, date, todayDate, isInMonth),
                 ),
-                // Priority dots
-                if (sortedPriorities.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: sortedPriorities.map((p) {
-                      return Container(
-                        width: 5,
-                        height: 5,
-                        margin: const EdgeInsets.symmetric(horizontal: 1),
-                        decoration: BoxDecoration(
-                          color: _priorityColor(p),
-                          shape: BoxShape.circle,
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                // Focus duration indicator
-                if (focusSeconds > 0) ...[
-                  const SizedBox(height: 1),
-                  Text(
-                    _formatDuration(context, focusSeconds),
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: colors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDateHeader(
+    AppColors colors,
+    DateTime date,
+    bool isToday,
+    bool isSelected,
+    bool isInMonth,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 2),
+      child: Row(
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: isToday
+                ? BoxDecoration(
+                    color: colors.primary,
+                    shape: BoxShape.circle,
+                  )
+                : null,
+            child: Text(
+              '${date.day}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isToday || isSelected
+                    ? FontWeight.w600
+                    : FontWeight.normal,
+                color: isToday
+                    ? Colors.white
+                    : isInMonth
+                        ? colors.textPrimary
+                        : colors.textHint,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskBars(
+    BuildContext context,
+    List<Task> tasks,
+    DateTime cellDate,
+    DateTime todayDate,
+    bool isInMonth,
+  ) {
+    if (tasks.isEmpty || !isInMonth) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const barHeight = 18.0;
+        const barSpacing = 1.0;
+        const moreIndicatorHeight = 14.0;
+        final availableHeight = constraints.maxHeight;
+
+        // 计算能显示的最大任务条数
+        final maxVisibleBars =
+            ((availableHeight - moreIndicatorHeight) / (barHeight + barSpacing))
+                .floor()
+                .clamp(0, tasks.length);
+        final hasMore = tasks.length > maxVisibleBars;
+        final visibleCount = hasMore ? maxVisibleBars : tasks.length;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int i = 0; i < visibleCount; i++)
+                _TaskBar(
+                  task: tasks[i],
+                  isOverdue: _isOverdueInCell(tasks[i], cellDate, todayDate),
+                  priorityColor: _priorityColor(tasks[i].priority),
+                  onTap: onTaskTap != null ? () => onTaskTap!(tasks[i]) : null,
+                ),
+              if (hasMore)
+                SizedBox(
+                  height: moreIndicatorHeight,
+                  child: Center(
+                    child: Text(
+                      '+${tasks.length - visibleCount}',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: context.appColors.textHint,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 判断任务在该日期格中是否为过期显示
+  bool _isOverdueInCell(Task task, DateTime cellDate, DateTime todayDate) {
+    if (task.dueDate == null) return false;
+    final taskDue = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
+    // 如果任务原始 dueDate 早于今天，且当前格子是今天，说明是过期继承
+    return taskDue.isBefore(todayDate) && _isSameDay(cellDate, todayDate);
+  }
+}
+
+/// macOS Calendar 风格任务条 — 彩色背景圆角矩形 + 白色文字
+class _TaskBar extends StatefulWidget {
+  final Task task;
+  final bool isOverdue;
+  final Color priorityColor;
+  final VoidCallback? onTap;
+
+  const _TaskBar({
+    required this.task,
+    required this.isOverdue,
+    required this.priorityColor,
+    this.onTap,
+  });
+
+  @override
+  State<_TaskBar> createState() => _TaskBarState();
+}
+
+class _TaskBarState extends State<_TaskBar> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 1),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Draggable<Task>(
+          data: widget.task,
+          feedback: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: widget.priorityColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                widget.task.title,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          childWhenDragging: Opacity(
+            opacity: 0.3,
+            child: _buildBar(colors),
+          ),
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: _buildBar(colors),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBar(AppColors colors) {
+    final isCompleted = widget.task.status == TaskStatus.completed;
+    final bgColor = isCompleted
+        ? colors.textHint.withValues(alpha: 0.3)
+        : widget.isOverdue
+            ? const Color(0xFFEF4444).withValues(alpha: 0.85)
+            : widget.priorityColor.withValues(alpha: _isHovered ? 0.95 : 0.85);
+
+    return Container(
+      height: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(3),
+      ),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        widget.task.title,
+        style: TextStyle(
+          fontSize: 10,
+          color: isCompleted ? colors.textHint : Colors.white,
+          fontWeight: FontWeight.w500,
+          decoration: isCompleted ? TextDecoration.lineThrough : null,
+        ),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 }

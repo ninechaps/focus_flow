@@ -872,4 +872,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String scheduleFocusDurationHours(int hours, int minutes) {
     return '${hours}h${minutes}m';
   }
+
+  @override
+  String get scheduleAddTaskToDate => 'Add task to this date';
+
+  @override
+  String get scheduleViewReview => 'View focus review';
+
+  @override
+  String get scheduleGoToDate => 'Go to this date';
+
+  @override
+  String get scheduleOverdueTask => 'Overdue';
 }

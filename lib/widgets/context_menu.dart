@@ -33,15 +33,26 @@ class ContextMenuGroup<T> {
   const ContextMenuGroup({required this.items});
 }
 
+/// 屏障上右键点击时的返回值，携带点击位置
+class ContextMenuSecondaryTap {
+  final Offset position;
+  const ContextMenuSecondaryTap(this.position);
+}
+
 /// 右键菜单组件
 class ContextMenu<T> {
   /// 显示右键菜单
-  static Future<T?> show<T>({
+  ///
+  /// 返回值可能是：
+  /// - T: 用户选择了菜单项
+  /// - null: 用户点击空白区域关闭菜单
+  /// - ContextMenuSecondaryTap: 用户在屏障上右键点击，携带新位置
+  static Future<Object?> show<T>({
     required BuildContext context,
     required List<ContextMenuGroup<T>> groups,
     required Offset position,
   }) {
-    return showGeneralDialog<T>(
+    return showGeneralDialog<Object>(
       context: context,
       barrierDismissible: true,
       barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
@@ -92,9 +103,12 @@ class _MenuContainerState<T> extends State<_MenuContainer<T>> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // 背景点击区域 - 点击任何地方都可以关闭菜单
+        // 背景点击区域 - 左键关闭菜单，右键带位置返回
         GestureDetector(
           onTap: () => Navigator.of(context).pop(),
+          onSecondaryTapUp: (details) {
+            Navigator.of(context).pop(ContextMenuSecondaryTap(details.globalPosition));
+          },
           child: Container(color: Colors.transparent),
         ),
         // 菜单面板

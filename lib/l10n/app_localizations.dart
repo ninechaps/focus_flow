@@ -1705,6 +1705,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{hours}h{minutes}m'**
   String scheduleFocusDurationHours(int hours, int minutes);
+
+  /// No description provided for @scheduleAddTaskToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add task to this date'**
+  String get scheduleAddTaskToDate;
+
+  /// No description provided for @scheduleViewReview.
+  ///
+  /// In en, this message translates to:
+  /// **'View focus review'**
+  String get scheduleViewReview;
+
+  /// No description provided for @scheduleGoToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to this date'**
+  String get scheduleGoToDate;
+
+  /// No description provided for @scheduleOverdueTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get scheduleOverdueTask;
 }
 
 class _AppLocalizationsDelegate
