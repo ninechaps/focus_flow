@@ -213,7 +213,8 @@ class _SidebarContent extends StatelessWidget {
                 taskProvider.selectedGoalId == goalId ? null : goalId,
               );
               taskProvider.setTagFilter(null);
-              if (currentLocation != '/app/list') {
+              if (currentLocation != '/app/list' &&
+                  currentLocation != '/app/schedule') {
                 context.go('/app/list');
               }
             },
@@ -234,7 +235,8 @@ class _SidebarContent extends StatelessWidget {
                 taskProvider.selectedTagId == tagId ? null : tagId,
               );
               taskProvider.setGoalFilter(null);
-              if (currentLocation != '/app/list') {
+              if (currentLocation != '/app/list' &&
+                  currentLocation != '/app/schedule') {
                 context.go('/app/list');
               }
             },
@@ -659,7 +661,8 @@ class _GoalsSection extends StatelessWidget {
             goal: goals[i],
             dotColor: dotColors[i % dotColors.length],
             isActive: selectedGoalId == goals[i].id &&
-                currentLocation == '/app/list',
+                (currentLocation == '/app/list' ||
+                    currentLocation == '/app/schedule'),
             formattedDate: _formatDate(goals[i].dueDate),
             onTap: () => onGoalTap(goals[i].id),
             onEdit: () => onEditGoal(goals[i]),
@@ -829,7 +832,8 @@ class _TagsSection extends StatelessWidget {
                 _TagChip(
                   tag: tag,
                   isActive: selectedTagId == tag.id &&
-                      currentLocation == '/app/list',
+                      (currentLocation == '/app/list' ||
+                          currentLocation == '/app/schedule'),
                   onTap: () => onTagTap(tag.id),
                   onEdit: () => onEditTag(tag),
                   onDelete: () => onDeleteTag(tag.id),

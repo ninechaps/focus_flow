@@ -11,6 +11,7 @@ import '../../models/enums.dart';
 import '../../models/focus_session.dart';
 import '../../widgets/context_menu.dart';
 import '../list/widgets/add_task_dialog.dart';
+import '../../pages/list/widgets/tips_panel.dart';
 import 'widgets/calendar_panel.dart';
 import 'widgets/review_panel.dart';
 import 'widgets/task_detail_drawer.dart';
@@ -74,21 +75,23 @@ class _SchedulePageState extends State<SchedulePage> {
     }).toList();
   }
 
-  /// 过滤任务：顶层、非删除、有 dueDate
-  List<Task> _filterTasks(List<Task> tasks) {
+  /// 过滤任务：顶层、非删除、有 dueDate，支持 Goal 过滤
+  List<Task> _filterTasks(List<Task> tasks, {String? goalId}) {
     return tasks
         .where((t) =>
             t.parentTaskId == null &&
             t.status != TaskStatus.deleted &&
-            t.dueDate != null)
+            t.dueDate != null &&
+            (goalId == null || t.goalId == goalId))
         .toList();
   }
 
   /// 构建日期→任务映射，包含过期任务继承和无日期任务逻辑
   Map<DateTime, List<Task>> _buildDateTaskMap(
     List<Task> tasksWithDueDate,
-    List<Task> allTasks,
-  ) {
+    List<Task> allTasks, {
+    String? goalId,
+  }) {
     final now = DateTime.now();
     final todayKey = DateTime(now.year, now.month, now.day);
     final map = <DateTime, List<Task>>{};
@@ -115,7 +118,8 @@ class _SchedulePageState extends State<SchedulePage> {
         t.parentTaskId == null &&
         t.dueDate == null &&
         t.status != TaskStatus.completed &&
-        t.status != TaskStatus.deleted);
+        t.status != TaskStatus.deleted &&
+        (goalId == null || t.goalId == goalId));
     for (final task in unscheduledTasks) {
       (map[todayKey] ??= []).add(task);
     }
@@ -128,6 +132,19 @@ class _SchedulePageState extends State<SchedulePage> {
     final map = <String, Task>{};
     for (final t in allTasks) {
       map[t.id] = t;
+    }
+    return map;
+  }
+
+  /// 构建父任务→子任务进度映射 {parentId: (completed, total)}
+  Map<String, (int, int)> _buildSubtaskProgressMap(List<Task> allTasks) {
+    final map = <String, (int, int)>{};
+    for (final t in allTasks) {
+      if (t.parentTaskId != null && t.status != TaskStatus.deleted) {
+        final prev = map[t.parentTaskId!] ?? (0, 0);
+        final isCompleted = t.status == TaskStatus.completed ? 1 : 0;
+        map[t.parentTaskId!] = (prev.$1 + isCompleted, prev.$2 + 1);
+      }
     }
     return map;
   }
@@ -389,20 +406,33 @@ class _SchedulePageState extends State<SchedulePage> {
     final colors = context.appColors;
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
-        final validTasks = _filterTasks(provider.tasks);
-        final dateTaskMap = _buildDateTaskMap(validTasks, provider.tasks);
+        final goalId = provider.selectedGoalId;
+        final validTasks = _filterTasks(provider.tasks, goalId: goalId);
+        final dateTaskMap = _buildDateTaskMap(
+          validTasks,
+          provider.tasks,
+          goalId: goalId,
+        );
+        final subtaskProgressMap = _buildSubtaskProgressMap(provider.tasks);
+        final isDrawerOpen = _selectedTask != null;
 
         return Container(
           color: colors.background,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 全宽日历
-              Positioned.fill(
+              // 日历区域：抽屉打开时收缩右侧空间
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.only(
+                  right: isDrawerOpen ? TipsPanel.width : 0,
+                ),
                 child: CalendarPanel(
                   currentMonth: _currentMonth,
                   selectedDate: _selectedDate,
                   dateTaskMap: dateTaskMap,
+                  subtaskProgressMap: subtaskProgressMap,
                   focusDurationMap: _focusDurationMap,
                   onPreviousMonth: _goToPreviousMonth,
                   onNextMonth: _goToNextMonth,
