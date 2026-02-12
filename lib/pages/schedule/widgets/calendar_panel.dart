@@ -10,6 +10,8 @@ class CalendarPanel extends StatelessWidget {
   final DateTime currentMonth;
   final DateTime selectedDate;
   final Map<DateTime, List<Task>> dateTaskMap;
+  /// 父任务→子任务进度映射 {parentId: (completed, total)}
+  final Map<String, (int, int)> subtaskProgressMap;
   final Map<DateTime, int> focusDurationMap;
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
@@ -24,6 +26,7 @@ class CalendarPanel extends StatelessWidget {
     required this.currentMonth,
     required this.selectedDate,
     required this.dateTaskMap,
+    required this.subtaskProgressMap,
     required this.focusDurationMap,
     required this.onPreviousMonth,
     required this.onNextMonth,
@@ -196,6 +199,7 @@ class CalendarPanel extends StatelessWidget {
     List<DateTime> dates,
     DateTime todayDate,
   ) {
+    final colors = context.appColors;
     return LayoutBuilder(
       builder: (context, constraints) {
         final rowHeight = constraints.maxHeight / 6;
@@ -206,8 +210,28 @@ class CalendarPanel extends StatelessWidget {
               child: Row(
                 children: List.generate(7, (col) {
                   final date = dates[row * 7 + col];
+                  final isLastCol = col == 6;
+                  final isLastRow = row == 5;
                   return Expanded(
-                    child: _buildDateCell(context, date, todayDate),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: isLastCol
+                              ? BorderSide.none
+                              : BorderSide(
+                                  color: colors.divider,
+                                  width: 0.5,
+                                ),
+                          bottom: isLastRow
+                              ? BorderSide.none
+                              : BorderSide(
+                                  color: colors.divider,
+                                  width: 0.5,
+                                ),
+                        ),
+                      ),
+                      child: _buildDateCell(context, date, todayDate),
+                    ),
                   );
                 }),
               ),
@@ -240,14 +264,12 @@ class CalendarPanel extends StatelessWidget {
               ? (details) => onDateContextMenu!(date, details.globalPosition)
               : null,
           child: Container(
-            margin: const EdgeInsets.all(1),
             decoration: BoxDecoration(
               color: isToday
                   ? colors.primary.withValues(alpha: 0.08)
                   : isSelected
                       ? colors.primaryLight
                       : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppTheme.radiusSm),
               border: isDragOver
                   ? Border.all(color: colors.primary, width: 2)
                   : null,
@@ -342,6 +364,7 @@ class CalendarPanel extends StatelessWidget {
               for (int i = 0; i < visibleCount; i++)
                 _TaskBar(
                   task: tasks[i],
+                  subtaskProgress: subtaskProgressMap[tasks[i].id],
                   isOverdue: _isOverdueInCell(tasks[i], cellDate, todayDate),
                   priorityColor: _priorityColor(tasks[i].priority),
                   onTap: onTaskTap != null ? () => onTaskTap!(tasks[i]) : null,
@@ -377,14 +400,19 @@ class CalendarPanel extends StatelessWidget {
 }
 
 /// macOS Calendar 风格任务条 — 彩色背景圆角矩形 + 白色文字
+/// 有子任务时显示进度条背景
 class _TaskBar extends StatefulWidget {
   final Task task;
+
+  /// 子任务进度：(completed, total)，null 表示无子任务
+  final (int, int)? subtaskProgress;
   final bool isOverdue;
   final Color priorityColor;
   final VoidCallback? onTap;
 
   const _TaskBar({
     required this.task,
+    this.subtaskProgress,
     required this.isOverdue,
     required this.priorityColor,
     this.onTap,
@@ -405,7 +433,11 @@ class _TaskBarState extends State<_TaskBar> {
       padding: const EdgeInsets.only(bottom: 1),
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => _isHovered = true),
+        onEnter: (_) {
+          if (widget.task.status != TaskStatus.completed) {
+            setState(() => _isHovered = true);
+          }
+        },
         onExit: (_) => setState(() => _isHovered = false),
         child: Draggable<Task>(
           data: widget.task,
@@ -443,30 +475,84 @@ class _TaskBarState extends State<_TaskBar> {
 
   Widget _buildBar(AppColors colors) {
     final isCompleted = widget.task.status == TaskStatus.completed;
-    final bgColor = isCompleted
-        ? colors.textHint.withValues(alpha: 0.3)
+    final hasProgress = widget.subtaskProgress != null;
+    final progress = hasProgress ? widget.subtaskProgress! : null;
+    final progressRatio = (hasProgress && progress!.$2 > 0)
+        ? progress.$1 / progress.$2
+        : 0.0;
+
+    final baseColor = isCompleted
+        ? colors.textHint.withValues(alpha: 0.15)
         : widget.isOverdue
             ? const Color(0xFFEF4444).withValues(alpha: 0.85)
-            : widget.priorityColor.withValues(alpha: _isHovered ? 0.95 : 0.85);
+            : widget.priorityColor
+                .withValues(alpha: _isHovered ? 0.95 : 0.85);
 
     return Container(
       height: 18,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: bgColor,
+        color: hasProgress && !isCompleted
+            ? baseColor.withValues(alpha: 0.35)
+            : baseColor,
         borderRadius: BorderRadius.circular(3),
       ),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        widget.task.title,
-        style: TextStyle(
-          fontSize: 10,
-          color: isCompleted ? colors.textHint : Colors.white,
-          fontWeight: FontWeight.w500,
-          decoration: isCompleted ? TextDecoration.lineThrough : null,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      child: Stack(
+        children: [
+          // 进度条背景填充
+          if (hasProgress && !isCompleted)
+            FractionallySizedBox(
+              widthFactor: progressRatio,
+              child: Container(color: baseColor),
+            ),
+          // 文字内容
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  if (isCompleted)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 2),
+                      child: Icon(
+                        Icons.check,
+                        size: 10,
+                        color: colors.textHint,
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      widget.task.title,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color:
+                            isCompleted ? colors.textHint : Colors.white,
+                        fontWeight: FontWeight.w500,
+                        decoration: isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (hasProgress && !isCompleted)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 2),
+                      child: Text(
+                        '${progress!.$1}/${progress.$2}',
+                        style: TextStyle(
+                          fontSize: 8,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
