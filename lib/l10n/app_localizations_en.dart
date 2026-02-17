@@ -763,10 +763,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginSubtitle => 'Sign in to continue to Focus Hut';
 
   @override
-  String get loginUsername => 'Username';
+  String get loginEmail => 'Email';
 
   @override
-  String get loginUsernamePlaceholder => 'Enter your username';
+  String get loginEmailPlaceholder => 'Enter your email address';
 
   @override
   String get loginPassword => 'Password';
@@ -775,19 +775,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginPasswordPlaceholder => 'Enter your password';
 
   @override
-  String get loginUsernameRequired => 'Please enter your username';
+  String get loginEmailRequired => 'Please enter your email address';
+
+  @override
+  String get loginEmailInvalid => 'Please enter a valid email address';
 
   @override
   String get loginPasswordRequired => 'Please enter your password';
 
   @override
-  String get loginPasswordTooShort => 'Password must be at least 4 characters';
+  String get loginPasswordTooShort => 'Password must be at least 8 characters';
 
   @override
   String get loginSignIn => 'Sign In';
 
   @override
-  String get loginDemoHint => 'Demo: admin / admin123';
+  String get loginRegister => 'Don\'t have an account?';
+
+  @override
+  String get loginRegisterLink => 'Sign Up';
 
   @override
   String get profileTitle => 'Profile';
@@ -821,11 +827,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get datePickerConfirm => 'Confirm';
 
   @override
-  String get authEmptyCredentials => 'Username and password cannot be empty';
+  String get authEmptyCredentials => 'Email and password cannot be empty';
 
   @override
-  String get authInvalidCredentials =>
-      'Invalid username or password\nCorrect username: admin, password: admin123';
+  String get authInvalidCredentials => 'Invalid email or password';
+
+  @override
+  String get authEncryptionError =>
+      'Encryption service error, please try again later';
+
+  @override
+  String get authNetworkError =>
+      'Network connection failed, please check your network';
+
+  @override
+  String get authServerError => 'Server error, please try again later';
+
+  @override
+  String get authSessionExpired => 'Session expired, please sign in again';
+
+  @override
+  String get authEmailNotVerified =>
+      'Email not verified, please verify your email first';
+
+  @override
+  String get authTooManyRequests => 'Too many requests, please try again later';
 
   @override
   String get scheduleTabPlan => 'Plan';

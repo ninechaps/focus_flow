@@ -1,5 +1,5 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import '../../l10n/app_localizations.dart';
@@ -17,10 +17,12 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final PageController _pageController = PageController();
   int _currentSlide = 0;
+
+  static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   List<_SlideData> _slides(AppLocalizations l10n) => [
     _SlideData(
@@ -43,7 +45,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    // Auto-advance slides
     _startSlideTimer();
   }
 
@@ -63,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _pageController.dispose();
     super.dispose();
@@ -75,6 +76,18 @@ class _LoginPageState extends State<LoginPage> {
         return l10n.authEmptyCredentials;
       case 'invalid_credentials':
         return l10n.authInvalidCredentials;
+      case 'encryption_error':
+        return l10n.authEncryptionError;
+      case 'network_error':
+        return l10n.authNetworkError;
+      case 'server_error':
+        return l10n.authServerError;
+      case 'session_expired':
+        return l10n.authSessionExpired;
+      case 'email_not_verified':
+        return l10n.authEmailNotVerified;
+      case 'too_many_requests':
+        return l10n.authTooManyRequests;
       default:
         return errorCode;
     }
@@ -83,16 +96,17 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      final success = await authProvider.login(
-        _usernameController.text.trim(),
+      // Route guard will handle navigation on success
+      await authProvider.login(
+        _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-
-      if (success && mounted) {
-        context.go('/app/list');
-      }
     }
+  }
+
+  void _handleRegister() {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.openRegisterPage();
   }
 
   @override
@@ -296,17 +310,20 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: AppTheme.spacingXl),
 
-                  // Username field
+                  // Email field
                   AppTextField(
-                    label: l10n.loginUsername,
-                    hint: l10n.loginUsernamePlaceholder,
-                    controller: _usernameController,
-                    prefixIcon: const Icon(Icons.person_outline, size: AppTheme.iconSizeMd),
-                    keyboardType: TextInputType.text,
+                    label: l10n.loginEmail,
+                    hint: l10n.loginEmailPlaceholder,
+                    controller: _emailController,
+                    prefixIcon: const Icon(Icons.email_outlined, size: AppTheme.iconSizeMd),
+                    keyboardType: TextInputType.emailAddress,
                     onFieldSubmitted: () => FocusScope.of(context).nextFocus(),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return l10n.loginUsernameRequired;
+                        return l10n.loginEmailRequired;
+                      }
+                      if (!_emailRegex.hasMatch(value.trim())) {
+                        return l10n.loginEmailInvalid;
                       }
                       return null;
                     },
@@ -327,7 +344,7 @@ class _LoginPageState extends State<LoginPage> {
                       if (value == null || value.trim().isEmpty) {
                         return l10n.loginPasswordRequired;
                       }
-                      if (value.length < 4) {
+                      if (value.length < 8) {
                         return l10n.loginPasswordTooShort;
                       }
                       return null;
@@ -409,33 +426,27 @@ class _LoginPageState extends State<LoginPage> {
 
                   const SizedBox(height: AppTheme.spacingLg),
 
-                  // Demo credentials hint
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.spacingSm),
-                    decoration: BoxDecoration(
-                      color: colors.primary.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                      border: Border.all(
-                        color: colors.primary.withValues(alpha: 0.1),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: AppTheme.iconSizeSm,
-                          color: colors.primary,
-                        ),
-                        const SizedBox(width: AppTheme.spacingSm),
-                        Expanded(
-                          child: Text(
-                            l10n.loginDemoHint,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colors.primary,
-                                ),
+                  // Register link
+                  Center(
+                    child: RichText(
+                      text: TextSpan(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                        children: [
+                          TextSpan(text: l10n.loginRegister),
+                          const TextSpan(text: ' '),
+                          TextSpan(
+                            text: l10n.loginRegisterLink,
+                            style: TextStyle(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = _handleRegister,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],

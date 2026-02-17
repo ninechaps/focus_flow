@@ -63,8 +63,8 @@ class ProfilePage extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              user?.username.isNotEmpty == true
-                                  ? user!.username[0].toUpperCase()
+                              user?.username?.isNotEmpty == true
+                                  ? user!.username![0].toUpperCase()
                                   : 'U',
                               style: TextStyle(
                                 fontSize: AppTheme.fontSizeDisplay,
@@ -90,9 +90,9 @@ class ProfilePage extends StatelessWidget {
                         ),
                         const SizedBox(height: AppTheme.spacingLg),
                         // Last login
-                        if (user?.lastLoginTime != null)
+                        if (user?.lastLoginAt != null)
                           Text(
-                            l10n.profileLastLogin(_formatDateTime(user!.lastLoginTime!)),
+                            l10n.profileLastLogin(_formatDateTime(user!.lastLoginAt!)),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: colors.textHint,
                                 ),

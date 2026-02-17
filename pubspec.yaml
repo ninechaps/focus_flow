@@ -52,6 +52,12 @@ dependencies:
   hotkey_manager: ^0.2.3
   flutter_local_notifications: ^20.0.0
 
+  # Auth & Network
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.4
+  pointycastle: ^3.9.1
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

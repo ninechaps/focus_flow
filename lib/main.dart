@@ -5,14 +5,17 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:focus_flow/router.dart';
 import 'l10n/app_localizations.dart';
+import './core/api/http_client.dart';
+import './core/auth/auth_storage.dart';
 import './providers/auth_provider.dart';
 import './providers/task_provider.dart';
 import './providers/focus_provider.dart';
 import './providers/theme_provider.dart';
 import './providers/locale_provider.dart';
-import './widgets/auth_wrapper.dart';
 import './theme/app_theme.dart';
 import './repositories/repository_provider.dart';
+import './repositories/http/http_auth_repository.dart';
+import './services/device_info_service.dart';
 import './services/platform_integration_service.dart';
 
 void main() async {
@@ -20,6 +23,19 @@ void main() async {
 
   // Initialize repository provider with SQLite database
   await RepositoryProvider.instance.init();
+
+  // Initialize HTTP client
+  HttpClient.instance.init();
+
+  // Initialize auth dependencies
+  final authStorage = AuthStorage();
+  final deviceInfoService = DeviceInfoService(storage: authStorage);
+  final authRepository = HttpAuthRepository(dio: HttpClient.instance.dio);
+  final authProvider = AuthProvider(
+    authRepository: authRepository,
+    storage: authStorage,
+    deviceInfo: deviceInfoService,
+  );
 
   // Create Provider instances upfront so PlatformIntegrationService can reference them
   final focusProvider = FocusProvider();
@@ -32,6 +48,7 @@ void main() async {
   );
 
   runApp(MyApp(
+    authProvider: authProvider,
     focusProvider: focusProvider,
     taskProvider: taskProvider,
     platformService: platformService,
@@ -48,12 +65,14 @@ void main() async {
 }
 
 class MyApp extends StatefulWidget {
+  final AuthProvider authProvider;
   final FocusProvider focusProvider;
   final TaskProvider taskProvider;
   final PlatformIntegrationService platformService;
 
   const MyApp({
     super.key,
+    required this.authProvider,
     required this.focusProvider,
     required this.taskProvider,
     required this.platformService,
@@ -64,7 +83,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late final GoRouter _router = router();
+  late final GoRouter _router = router(authProvider: widget.authProvider);
 
   @override
   void initState() {
@@ -127,7 +146,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider.value(value: widget.authProvider),
         ChangeNotifierProvider.value(value: widget.taskProvider),
         ChangeNotifierProvider.value(value: widget.focusProvider),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
@@ -135,29 +154,27 @@ class _MyAppState extends State<MyApp> {
       ],
       child: Consumer2<ThemeProvider, LocaleProvider>(
         builder: (context, themeProvider, localeProvider, child) {
-          return AuthWrapper(
-            child: MaterialApp.router(
-              debugShowCheckedModeBanner: false,
-              localizationsDelegates: const [
-                AppLocalizations.delegate,
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const [
-                Locale('en'),
-                Locale('zh'),
-              ],
-              theme: AppTheme.buildTheme(),
-              darkTheme: AppTheme.buildDarkTheme(),
-              themeMode: themeProvider.themeMode,
-              locale: localeProvider.locale,
-              routerConfig: _router,
-              builder: (context, child) {
-                _updatePlatformStrings(context);
-                return child ?? const SizedBox.shrink();
-              },
-            ),
+          return MaterialApp.router(
+            debugShowCheckedModeBanner: false,
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [
+              Locale('en'),
+              Locale('zh'),
+            ],
+            theme: AppTheme.buildTheme(),
+            darkTheme: AppTheme.buildDarkTheme(),
+            themeMode: themeProvider.themeMode,
+            locale: localeProvider.locale,
+            routerConfig: _router,
+            builder: (context, child) {
+              _updatePlatformStrings(context);
+              return child ?? const SizedBox.shrink();
+            },
           );
         },
       ),
