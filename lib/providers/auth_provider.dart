@@ -1,66 +1,108 @@
 import 'package:flutter/foundation.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../core/api/http_client.dart';
+import '../core/auth/auth_interceptor.dart';
+import '../core/auth/auth_storage.dart';
+import '../core/crypto/rsa_encrypt_service.dart';
+import '../models/login_request.dart';
+import '../models/user.dart';
+import '../repositories/interfaces/auth_repository_interface.dart';
+import '../services/device_info_service.dart';
+
+/// Manages authentication state for the entire application.
+///
+/// Handles login (RSA-encrypted), logout, token persistence,
+/// startup token validation, and register page navigation.
 class AuthProvider extends ChangeNotifier {
-  // 固定的登录凭据
-  static const String _validUsername = 'admin';
-  static const String _validPassword = 'admin123';
-  static const String _storageKey = 'user_login_info';
+  final AuthRepositoryInterface _authRepository;
+  final AuthStorage _storage;
+  final DeviceInfoService _deviceInfo;
 
   bool _isAuthenticated = false;
+  bool _isInitialized = false;
   bool _isLoading = false;
   String? _errorMessage;
   User? _currentUser;
 
   bool get isAuthenticated => _isAuthenticated;
+  bool get isInitialized => _isInitialized;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   User? get currentUser => _currentUser;
 
-  AuthProvider() {
-    _loadStoredLoginInfo();
+  AuthProvider({
+    required AuthRepositoryInterface authRepository,
+    required AuthStorage storage,
+    required DeviceInfoService deviceInfo,
+  })  : _authRepository = authRepository,
+        _storage = storage,
+        _deviceInfo = deviceInfo {
+    _setupInterceptor();
+    _initAuth();
   }
 
-  Future<void> _loadStoredLoginInfo() async {
+  /// Set up the AuthInterceptor with force-logout callback
+  void _setupInterceptor() {
+    final interceptor = AuthInterceptor(
+      storage: _storage,
+      onForceLogout: _onForceLogout,
+    );
+    HttpClient.instance.addInterceptor(interceptor);
+  }
+
+  /// Called by AuthInterceptor when token refresh fails
+  Future<void> _onForceLogout() async {
+    await _storage.clearAll();
+    _isAuthenticated = false;
+    _currentUser = null;
+    _errorMessage = 'session_expired';
+    notifyListeners();
+  }
+
+  /// Restore authentication state from secure storage on app startup
+  Future<void> _initAuth() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final storedUserData = prefs.getString(_storageKey);
-      
-      if (storedUserData != null) {
-        final userData = jsonDecode(storedUserData) as Map<String, dynamic>;
-        _currentUser = User.fromJson(userData);
-        _isAuthenticated = true;
+      debugPrint('[AUTH] _initAuth: Reading access token from storage...');
+      final accessToken = await _storage.readAccessToken();
+      debugPrint('[AUTH] _initAuth: accessToken=${accessToken != null ? "exists" : "null"}');
+      if (accessToken == null) {
+        _isInitialized = true;
         notifyListeners();
+        return;
+      }
+
+      // Token exists — validate by fetching current user
+      final response = await _authRepository.getCurrentUser();
+      if (response.isSuccess && response.data != null) {
+        _currentUser = response.data;
+        _isAuthenticated = true;
+      } else {
+        // Token invalid or server unreachable — clear and require re-login
+        await _storage.clearAll();
+        _isAuthenticated = false;
+        _currentUser = null;
       }
     } catch (e) {
-      // 如果读取存储信息失败，清除认证状态
-      await _clearStoredLoginInfo();
-      debugPrint('Failed to load stored login info: $e');
+      debugPrint('Auth initialization failed: $e');
+      await _storage.clearAll();
+      _isAuthenticated = false;
+      _currentUser = null;
+    } finally {
+      _isInitialized = true;
+      notifyListeners();
     }
   }
 
-  Future<void> _saveLoginInfo(User user) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_storageKey, jsonEncode(user.toJson()));
-    } catch (e) {
-      debugPrint('Failed to save login info: $e');
-    }
-  }
-
-  Future<void> _clearStoredLoginInfo() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_storageKey);
-    } catch (e) {
-      debugPrint('Failed to clear stored login info: $e');
-    }
-  }
-
-  Future<bool> login(String username, String password) async {
-    if (username.isEmpty || password.isEmpty) {
+  /// Login with email and password.
+  ///
+  /// 1. Validate input
+  /// 2. Fetch RSA public key
+  /// 3. Encrypt password with RSA-OAEP + SHA-256
+  /// 4. Call login API with encrypted password + device info
+  /// 5. Store tokens and user info in secure storage
+  Future<bool> login(String email, String password) async {
+    if (email.isEmpty || password.isEmpty) {
       _errorMessage = 'empty_credentials';
       notifyListeners();
       return false;
@@ -70,57 +112,113 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    // 模拟网络延迟
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Step 1: Get RSA public key
+      debugPrint('[AUTH] Step 1: Fetching RSA public key...');
+      final keyResponse = await _authRepository.getPublicKey();
+      if (keyResponse.isError || keyResponse.data == null) {
+        debugPrint('[AUTH] Step 1 FAILED: ${keyResponse.message}');
+        _errorMessage = 'encryption_error';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      debugPrint('[AUTH] Step 1 OK');
 
-    // 验证固定的用户凭据
-    if (username == _validUsername && password == _validPassword) {
-      _currentUser = User(
-        username: username,
-        email: '$username@example.com',
-        lastLoginTime: DateTime.now(),
+      // Step 2: Encrypt password
+      debugPrint('[AUTH] Step 2: Encrypting password...');
+      final encryptedPassword = RsaEncryptService.encrypt(
+        password,
+        keyResponse.data!,
       );
-      
+      debugPrint('[AUTH] Step 2 OK');
+
+      // Step 3: Build login request with device info
+      debugPrint('[AUTH] Step 3: Building login request (device info)...');
+      final request = LoginRequest(
+        email: email,
+        encryptedPassword: encryptedPassword,
+        deviceId: await _deviceInfo.getDeviceId(),
+        deviceName: _deviceInfo.getDeviceName(),
+        deviceType: _deviceInfo.getDeviceType(),
+      );
+      debugPrint('[AUTH] Step 3 OK');
+
+      // Step 4: Call login API
+      debugPrint('[AUTH] Step 4: Calling login API...');
+      final loginResponse = await _authRepository.login(request);
+      if (loginResponse.isError || loginResponse.data == null) {
+        debugPrint('[AUTH] Step 4 FAILED: ${loginResponse.message}');
+        _errorMessage = loginResponse.message ?? 'invalid_credentials';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+      debugPrint('[AUTH] Step 4 OK');
+
+      // Step 5: Store tokens and user info
+      debugPrint('[AUTH] Step 5: Storing tokens to secure storage...');
+      final authData = loginResponse.data!;
+      await _storage.storeTokens(
+        accessToken: authData.accessToken,
+        refreshToken: authData.refreshToken,
+        sessionId: authData.sessionId,
+      );
+      debugPrint('[AUTH] Step 5a: Tokens stored. Storing user info...');
+      await _storage.writeUserInfo(authData.user.toJson());
+      debugPrint('[AUTH] Step 5 OK');
+
+      _currentUser = authData.user;
       _isAuthenticated = true;
       _errorMessage = null;
-      
-      // 将登录信息存储到本地
-      await _saveLoginInfo(_currentUser!);
-    } else {
-      _isAuthenticated = false;
-      _currentUser = null;
-      _errorMessage = 'invalid_credentials';
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e, stackTrace) {
+      debugPrint('[AUTH] Login failed at: $e');
+      debugPrint('[AUTH] Stack trace: $stackTrace');
+      _errorMessage = 'server_error';
+      _isLoading = false;
+      notifyListeners();
+      return false;
     }
-
-    _isLoading = false;
-    notifyListeners();
-    return _isAuthenticated;
   }
 
+  /// Logout: notify server, clear local tokens, reset state.
   Future<void> logout() async {
+    // Attempt server-side logout (best effort, don't block on failure)
+    try {
+      final refreshToken = await _storage.readRefreshToken();
+      final sessionId = await _storage.readSessionId();
+      if (refreshToken != null) {
+        await _authRepository.logout(
+          refreshToken: refreshToken,
+          sessionId: sessionId,
+        );
+      }
+    } catch (e) {
+      debugPrint('Server logout failed (non-blocking): $e');
+    }
+
+    // Clear local state regardless of server response
+    await _storage.clearAll();
     _isAuthenticated = false;
     _currentUser = null;
     _errorMessage = null;
-    
-    // 清除存储的登录信息
-    await _clearStoredLoginInfo();
-    
     notifyListeners();
+  }
+
+  /// Open the registration page in the system browser
+  Future<void> openRegisterPage() async {
+    final baseUrl = AppHttpConfig.baseUrl;
+    final url = Uri.parse('$baseUrl/auth/register/client');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   void clearError() {
     _errorMessage = null;
     notifyListeners();
-  }
-
-  // 检查登录信息是否存在，如果不存在则退出登录
-  Future<void> validateStoredLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final storedUserData = prefs.getString(_storageKey);
-    
-    if (storedUserData == null && _isAuthenticated) {
-      // 如果没有存储的登录信息但当前处于已登录状态，强制退出登录
-      await logout();
-    }
   }
 }

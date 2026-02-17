@@ -1502,17 +1502,17 @@ abstract class AppLocalizations {
   /// **'Sign in to continue to Focus Hut'**
   String get loginSubtitle;
 
-  /// No description provided for @loginUsername.
+  /// No description provided for @loginEmail.
   ///
   /// In en, this message translates to:
-  /// **'Username'**
-  String get loginUsername;
+  /// **'Email'**
+  String get loginEmail;
 
-  /// No description provided for @loginUsernamePlaceholder.
+  /// No description provided for @loginEmailPlaceholder.
   ///
   /// In en, this message translates to:
-  /// **'Enter your username'**
-  String get loginUsernamePlaceholder;
+  /// **'Enter your email address'**
+  String get loginEmailPlaceholder;
 
   /// No description provided for @loginPassword.
   ///
@@ -1526,11 +1526,17 @@ abstract class AppLocalizations {
   /// **'Enter your password'**
   String get loginPasswordPlaceholder;
 
-  /// No description provided for @loginUsernameRequired.
+  /// No description provided for @loginEmailRequired.
   ///
   /// In en, this message translates to:
-  /// **'Please enter your username'**
-  String get loginUsernameRequired;
+  /// **'Please enter your email address'**
+  String get loginEmailRequired;
+
+  /// No description provided for @loginEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get loginEmailInvalid;
 
   /// No description provided for @loginPasswordRequired.
   ///
@@ -1541,7 +1547,7 @@ abstract class AppLocalizations {
   /// No description provided for @loginPasswordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 4 characters'**
+  /// **'Password must be at least 8 characters'**
   String get loginPasswordTooShort;
 
   /// No description provided for @loginSignIn.
@@ -1550,11 +1556,17 @@ abstract class AppLocalizations {
   /// **'Sign In'**
   String get loginSignIn;
 
-  /// No description provided for @loginDemoHint.
+  /// No description provided for @loginRegister.
   ///
   /// In en, this message translates to:
-  /// **'Demo: admin / admin123'**
-  String get loginDemoHint;
+  /// **'Don\'t have an account?'**
+  String get loginRegister;
+
+  /// No description provided for @loginRegisterLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get loginRegisterLink;
 
   /// No description provided for @profileTitle.
   ///
@@ -1613,14 +1625,50 @@ abstract class AppLocalizations {
   /// No description provided for @authEmptyCredentials.
   ///
   /// In en, this message translates to:
-  /// **'Username and password cannot be empty'**
+  /// **'Email and password cannot be empty'**
   String get authEmptyCredentials;
 
   /// No description provided for @authInvalidCredentials.
   ///
   /// In en, this message translates to:
-  /// **'Invalid username or password\nCorrect username: admin, password: admin123'**
+  /// **'Invalid email or password'**
   String get authInvalidCredentials;
+
+  /// No description provided for @authEncryptionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Encryption service error, please try again later'**
+  String get authEncryptionError;
+
+  /// No description provided for @authNetworkError.
+  ///
+  /// In en, this message translates to:
+  /// **'Network connection failed, please check your network'**
+  String get authNetworkError;
+
+  /// No description provided for @authServerError.
+  ///
+  /// In en, this message translates to:
+  /// **'Server error, please try again later'**
+  String get authServerError;
+
+  /// No description provided for @authSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired, please sign in again'**
+  String get authSessionExpired;
+
+  /// No description provided for @authEmailNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email not verified, please verify your email first'**
+  String get authEmailNotVerified;
+
+  /// No description provided for @authTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests, please try again later'**
+  String get authTooManyRequests;
 
   /// No description provided for @scheduleTabPlan.
   ///

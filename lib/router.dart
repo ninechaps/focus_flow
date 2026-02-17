@@ -9,10 +9,28 @@ import './pages/profile/index.dart';
 import './pages/setting/index.dart';
 import './pages/statistics/index.dart';
 import './pages/focus/index.dart';
+import './providers/auth_provider.dart';
 
-GoRouter router() {
+GoRouter router({required AuthProvider authProvider}) {
   return GoRouter(
     initialLocation: '/login',
+    refreshListenable: authProvider,
+    redirect: (context, state) {
+      final isLoggedIn = authProvider.isAuthenticated;
+      final isInitialized = authProvider.isInitialized;
+      final isLoginRoute = state.matchedLocation == '/login';
+
+      // While auth is initializing, don't redirect (avoid flash)
+      if (!isInitialized) return null;
+
+      // Not authenticated → force to login page
+      if (!isLoggedIn && !isLoginRoute) return '/login';
+
+      // Already authenticated → redirect away from login
+      if (isLoggedIn && isLoginRoute) return '/app/list';
+
+      return null;
+    },
     routes: [
       // Login page - no shell
       GoRoute(

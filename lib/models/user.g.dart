@@ -7,15 +7,33 @@ part of 'user.dart';
 // **************************************************************************
 
 _User _$UserFromJson(Map<String, dynamic> json) => _User(
-  username: json['username'] as String,
+  id: json['id'] as String,
   email: json['email'] as String,
-  lastLoginTime: json['lastLoginTime'] == null
+  username: json['username'] as String?,
+  fullName: json['fullName'] as String?,
+  avatarUrl: json['avatarUrl'] as String?,
+  registrationSource: json['registrationSource'] as String?,
+  emailVerifiedAt: json['emailVerifiedAt'] == null
       ? null
-      : DateTime.parse(json['lastLoginTime'] as String),
+      : DateTime.parse(json['emailVerifiedAt'] as String),
+  createdAt: json['createdAt'] == null
+      ? null
+      : DateTime.parse(json['createdAt'] as String),
+  lastLoginAt: json['lastLoginAt'] == null
+      ? null
+      : DateTime.parse(json['lastLoginAt'] as String),
+  totalOnlineTime: (json['totalOnlineTime'] as num?)?.toInt() ?? 0,
 );
 
 Map<String, dynamic> _$UserToJson(_User instance) => <String, dynamic>{
-  'username': instance.username,
+  'id': instance.id,
   'email': instance.email,
-  'lastLoginTime': instance.lastLoginTime?.toIso8601String(),
+  'username': instance.username,
+  'fullName': instance.fullName,
+  'avatarUrl': instance.avatarUrl,
+  'registrationSource': instance.registrationSource,
+  'emailVerifiedAt': instance.emailVerifiedAt?.toIso8601String(),
+  'createdAt': instance.createdAt?.toIso8601String(),
+  'lastLoginAt': instance.lastLoginAt?.toIso8601String(),
+  'totalOnlineTime': instance.totalOnlineTime,
 };

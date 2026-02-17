@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$User {
 
- String get username; String get email; DateTime? get lastLoginTime;
+ String get id; String get email; String? get username; String? get fullName; String? get avatarUrl; String? get registrationSource; DateTime? get emailVerifiedAt; DateTime? get createdAt; DateTime? get lastLoginAt; int get totalOnlineTime;
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserCopyWith<User> get copyWith => _$UserCopyWithImpl<User>(this as User, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is User&&(identical(other.username, username) || other.username == username)&&(identical(other.email, email) || other.email == email)&&(identical(other.lastLoginTime, lastLoginTime) || other.lastLoginTime == lastLoginTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is User&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.registrationSource, registrationSource) || other.registrationSource == registrationSource)&&(identical(other.emailVerifiedAt, emailVerifiedAt) || other.emailVerifiedAt == emailVerifiedAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLoginAt, lastLoginAt) || other.lastLoginAt == lastLoginAt)&&(identical(other.totalOnlineTime, totalOnlineTime) || other.totalOnlineTime == totalOnlineTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,username,email,lastLoginTime);
+int get hashCode => Object.hash(runtimeType,id,email,username,fullName,avatarUrl,registrationSource,emailVerifiedAt,createdAt,lastLoginAt,totalOnlineTime);
 
 @override
 String toString() {
-  return 'User(username: $username, email: $email, lastLoginTime: $lastLoginTime)';
+  return 'User(id: $id, email: $email, username: $username, fullName: $fullName, avatarUrl: $avatarUrl, registrationSource: $registrationSource, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, lastLoginAt: $lastLoginAt, totalOnlineTime: $totalOnlineTime)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserCopyWith<$Res>  {
   factory $UserCopyWith(User value, $Res Function(User) _then) = _$UserCopyWithImpl;
 @useResult
 $Res call({
- String username, String email, DateTime? lastLoginTime
+ String id, String email, String? username, String? fullName, String? avatarUrl, String? registrationSource, DateTime? emailVerifiedAt, DateTime? createdAt, DateTime? lastLoginAt, int totalOnlineTime
 });
 
 
@@ -65,12 +65,19 @@ class _$UserCopyWithImpl<$Res>
 
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? username = null,Object? email = null,Object? lastLoginTime = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? email = null,Object? username = freezed,Object? fullName = freezed,Object? avatarUrl = freezed,Object? registrationSource = freezed,Object? emailVerifiedAt = freezed,Object? createdAt = freezed,Object? lastLoginAt = freezed,Object? totalOnlineTime = null,}) {
   return _then(_self.copyWith(
-username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String,lastLoginTime: freezed == lastLoginTime ? _self.lastLoginTime : lastLoginTime // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as String,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String?,fullName: freezed == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
+as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,registrationSource: freezed == registrationSource ? _self.registrationSource : registrationSource // ignore: cast_nullable_to_non_nullable
+as String?,emailVerifiedAt: freezed == emailVerifiedAt ? _self.emailVerifiedAt : emailVerifiedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,lastLoginAt: freezed == lastLoginAt ? _self.lastLoginAt : lastLoginAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,totalOnlineTime: null == totalOnlineTime ? _self.totalOnlineTime : totalOnlineTime // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 
@@ -155,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String username,  String email,  DateTime? lastLoginTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String email,  String? username,  String? fullName,  String? avatarUrl,  String? registrationSource,  DateTime? emailVerifiedAt,  DateTime? createdAt,  DateTime? lastLoginAt,  int totalOnlineTime)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _User() when $default != null:
-return $default(_that.username,_that.email,_that.lastLoginTime);case _:
+return $default(_that.id,_that.email,_that.username,_that.fullName,_that.avatarUrl,_that.registrationSource,_that.emailVerifiedAt,_that.createdAt,_that.lastLoginAt,_that.totalOnlineTime);case _:
   return orElse();
 
 }
@@ -176,10 +183,10 @@ return $default(_that.username,_that.email,_that.lastLoginTime);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String username,  String email,  DateTime? lastLoginTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String email,  String? username,  String? fullName,  String? avatarUrl,  String? registrationSource,  DateTime? emailVerifiedAt,  DateTime? createdAt,  DateTime? lastLoginAt,  int totalOnlineTime)  $default,) {final _that = this;
 switch (_that) {
 case _User():
-return $default(_that.username,_that.email,_that.lastLoginTime);case _:
+return $default(_that.id,_that.email,_that.username,_that.fullName,_that.avatarUrl,_that.registrationSource,_that.emailVerifiedAt,_that.createdAt,_that.lastLoginAt,_that.totalOnlineTime);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +203,10 @@ return $default(_that.username,_that.email,_that.lastLoginTime);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String username,  String email,  DateTime? lastLoginTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String email,  String? username,  String? fullName,  String? avatarUrl,  String? registrationSource,  DateTime? emailVerifiedAt,  DateTime? createdAt,  DateTime? lastLoginAt,  int totalOnlineTime)?  $default,) {final _that = this;
 switch (_that) {
 case _User() when $default != null:
-return $default(_that.username,_that.email,_that.lastLoginTime);case _:
+return $default(_that.id,_that.email,_that.username,_that.fullName,_that.avatarUrl,_that.registrationSource,_that.emailVerifiedAt,_that.createdAt,_that.lastLoginAt,_that.totalOnlineTime);case _:
   return null;
 
 }
@@ -211,12 +218,19 @@ return $default(_that.username,_that.email,_that.lastLoginTime);case _:
 @JsonSerializable()
 
 class _User implements User {
-  const _User({required this.username, required this.email, this.lastLoginTime});
+  const _User({required this.id, required this.email, this.username, this.fullName, this.avatarUrl, this.registrationSource, this.emailVerifiedAt, this.createdAt, this.lastLoginAt, this.totalOnlineTime = 0});
   factory _User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
 
-@override final  String username;
+@override final  String id;
 @override final  String email;
-@override final  DateTime? lastLoginTime;
+@override final  String? username;
+@override final  String? fullName;
+@override final  String? avatarUrl;
+@override final  String? registrationSource;
+@override final  DateTime? emailVerifiedAt;
+@override final  DateTime? createdAt;
+@override final  DateTime? lastLoginAt;
+@override@JsonKey() final  int totalOnlineTime;
 
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
@@ -231,16 +245,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _User&&(identical(other.username, username) || other.username == username)&&(identical(other.email, email) || other.email == email)&&(identical(other.lastLoginTime, lastLoginTime) || other.lastLoginTime == lastLoginTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _User&&(identical(other.id, id) || other.id == id)&&(identical(other.email, email) || other.email == email)&&(identical(other.username, username) || other.username == username)&&(identical(other.fullName, fullName) || other.fullName == fullName)&&(identical(other.avatarUrl, avatarUrl) || other.avatarUrl == avatarUrl)&&(identical(other.registrationSource, registrationSource) || other.registrationSource == registrationSource)&&(identical(other.emailVerifiedAt, emailVerifiedAt) || other.emailVerifiedAt == emailVerifiedAt)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.lastLoginAt, lastLoginAt) || other.lastLoginAt == lastLoginAt)&&(identical(other.totalOnlineTime, totalOnlineTime) || other.totalOnlineTime == totalOnlineTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,username,email,lastLoginTime);
+int get hashCode => Object.hash(runtimeType,id,email,username,fullName,avatarUrl,registrationSource,emailVerifiedAt,createdAt,lastLoginAt,totalOnlineTime);
 
 @override
 String toString() {
-  return 'User(username: $username, email: $email, lastLoginTime: $lastLoginTime)';
+  return 'User(id: $id, email: $email, username: $username, fullName: $fullName, avatarUrl: $avatarUrl, registrationSource: $registrationSource, emailVerifiedAt: $emailVerifiedAt, createdAt: $createdAt, lastLoginAt: $lastLoginAt, totalOnlineTime: $totalOnlineTime)';
 }
 
 
@@ -251,7 +265,7 @@ abstract mixin class _$UserCopyWith<$Res> implements $UserCopyWith<$Res> {
   factory _$UserCopyWith(_User value, $Res Function(_User) _then) = __$UserCopyWithImpl;
 @override @useResult
 $Res call({
- String username, String email, DateTime? lastLoginTime
+ String id, String email, String? username, String? fullName, String? avatarUrl, String? registrationSource, DateTime? emailVerifiedAt, DateTime? createdAt, DateTime? lastLoginAt, int totalOnlineTime
 });
 
 
@@ -268,12 +282,19 @@ class __$UserCopyWithImpl<$Res>
 
 /// Create a copy of User
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? username = null,Object? email = null,Object? lastLoginTime = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? email = null,Object? username = freezed,Object? fullName = freezed,Object? avatarUrl = freezed,Object? registrationSource = freezed,Object? emailVerifiedAt = freezed,Object? createdAt = freezed,Object? lastLoginAt = freezed,Object? totalOnlineTime = null,}) {
   return _then(_User(
-username: null == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String,lastLoginTime: freezed == lastLoginTime ? _self.lastLoginTime : lastLoginTime // ignore: cast_nullable_to_non_nullable
-as DateTime?,
+as String,username: freezed == username ? _self.username : username // ignore: cast_nullable_to_non_nullable
+as String?,fullName: freezed == fullName ? _self.fullName : fullName // ignore: cast_nullable_to_non_nullable
+as String?,avatarUrl: freezed == avatarUrl ? _self.avatarUrl : avatarUrl // ignore: cast_nullable_to_non_nullable
+as String?,registrationSource: freezed == registrationSource ? _self.registrationSource : registrationSource // ignore: cast_nullable_to_non_nullable
+as String?,emailVerifiedAt: freezed == emailVerifiedAt ? _self.emailVerifiedAt : emailVerifiedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,createdAt: freezed == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,lastLoginAt: freezed == lastLoginAt ? _self.lastLoginAt : lastLoginAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,totalOnlineTime: null == totalOnlineTime ? _self.totalOnlineTime : totalOnlineTime // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

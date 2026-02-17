@@ -756,10 +756,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginSubtitle => '登录以继续使用专注小栈';
 
   @override
-  String get loginUsername => '用户名';
+  String get loginEmail => '邮箱';
 
   @override
-  String get loginUsernamePlaceholder => '请输入用户名';
+  String get loginEmailPlaceholder => '请输入邮箱地址';
 
   @override
   String get loginPassword => '密码';
@@ -768,19 +768,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get loginPasswordPlaceholder => '请输入密码';
 
   @override
-  String get loginUsernameRequired => '请输入用户名';
+  String get loginEmailRequired => '请输入邮箱地址';
+
+  @override
+  String get loginEmailInvalid => '请输入有效的邮箱地址';
 
   @override
   String get loginPasswordRequired => '请输入密码';
 
   @override
-  String get loginPasswordTooShort => '密码至少4位';
+  String get loginPasswordTooShort => '密码至少8位';
 
   @override
   String get loginSignIn => '登录';
 
   @override
-  String get loginDemoHint => '演示账号: admin / admin123';
+  String get loginRegister => '还没有账号？';
+
+  @override
+  String get loginRegisterLink => '注册';
 
   @override
   String get profileTitle => '个人资料';
@@ -814,10 +820,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get datePickerConfirm => '确定';
 
   @override
-  String get authEmptyCredentials => '用户名和密码不能为空';
+  String get authEmptyCredentials => '邮箱和密码不能为空';
 
   @override
-  String get authInvalidCredentials => '用户名或密码错误\n正确的用户名: admin, 密码: admin123';
+  String get authInvalidCredentials => '邮箱或密码错误';
+
+  @override
+  String get authEncryptionError => '加密服务异常，请稍后重试';
+
+  @override
+  String get authNetworkError => '网络连接失败，请检查网络设置';
+
+  @override
+  String get authServerError => '服务器异常，请稍后重试';
+
+  @override
+  String get authSessionExpired => '登录已过期，请重新登录';
+
+  @override
+  String get authEmailNotVerified => '邮箱未验证，请先验证邮箱';
+
+  @override
+  String get authTooManyRequests => '请求过于频繁，请稍后再试';
 
   @override
   String get scheduleTabPlan => '计划';
