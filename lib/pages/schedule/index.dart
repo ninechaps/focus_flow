@@ -13,6 +13,7 @@ import '../../widgets/context_menu.dart';
 import '../list/widgets/add_task_dialog.dart';
 import '../../pages/list/widgets/tips_panel.dart';
 import 'widgets/calendar_panel.dart';
+import 'widgets/date_focus_panel.dart';
 import 'widgets/review_panel.dart';
 import 'widgets/task_detail_drawer.dart';
 
@@ -28,8 +29,14 @@ class _SchedulePageState extends State<SchedulePage> {
   late DateTime _selectedDate;
   late DateTime _currentMonth;
 
-  /// 选中的任务，用于右侧滑出详情面板
+  /// 选中的任务，用于右侧任务详情面板
   Task? _selectedTask;
+
+  /// 是否显示日期专注面板（点击日期后展开）
+  bool _showDatePanel = false;
+
+  /// 任务详情是否从日期专注面板中打开（用于返回按钮逻辑）
+  bool _taskDetailFromDatePanel = false;
 
   /// 当月专注数据
   Map<DateTime, int> _focusDurationMap = {};
@@ -157,21 +164,43 @@ class _SchedulePageState extends State<SchedulePage> {
     setState(() {
       _selectedDate = date;
       _selectedTask = null;
+      _showDatePanel = true;
       _updateSessionsForSelectedDate();
     });
   }
 
   // --- 任务条点击 ---
 
-  void _onTaskTap(Task task) {
+  /// 从日历任务条点击 → 普通模式（可编辑，关闭后不恢复日期面板）
+  void _onCalendarTaskTap(Task task) {
     setState(() {
       _selectedTask = task;
+      _taskDetailFromDatePanel = false;
+      _showDatePanel = false;
+    });
+  }
+
+  /// 从日期专注面板点击 → 只读模式（关闭后返回日期面板）
+  void _onDatePanelTaskTap(Task task) {
+    setState(() {
+      _selectedTask = task;
+      _taskDetailFromDatePanel = true;
+      _showDatePanel = false;
     });
   }
 
   void _closeTaskDetail() {
     setState(() {
       _selectedTask = null;
+      // 只有从日期面板进入时，关闭后才恢复日期面板
+      _showDatePanel = _taskDetailFromDatePanel;
+      _taskDetailFromDatePanel = false;
+    });
+  }
+
+  void _closeDatePanel() {
+    setState(() {
+      _showDatePanel = false;
     });
   }
 
@@ -391,19 +420,24 @@ class _SchedulePageState extends State<SchedulePage> {
           goalId: goalId,
         );
         final subtaskProgressMap = _buildSubtaskProgressMap(provider.tasks);
-        final isDrawerOpen = _selectedTask != null;
+        final taskIdMap = _buildTaskIdMap(provider.tasks);
+
+        // 任务详情抽屉和日期专注面板互斥，任务抽屉优先
+        final isTaskDrawerOpen = _selectedTask != null;
+        final isDatePanelOpen = _showDatePanel && !isTaskDrawerOpen;
+        final isRightPanelOpen = isTaskDrawerOpen || isDatePanelOpen;
 
         return Container(
           color: colors.background,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // 日历区域：抽屉打开时收缩右侧空间
+              // 日历区域：右侧面板打开时收缩
               AnimatedPadding(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
                 padding: EdgeInsets.only(
-                  right: isDrawerOpen ? TipsPanel.width : 0,
+                  right: isRightPanelOpen ? TipsPanel.width : 0,
                 ),
                 child: CalendarPanel(
                   currentMonth: _currentMonth,
@@ -416,11 +450,20 @@ class _SchedulePageState extends State<SchedulePage> {
                   onToday: _goToToday,
                   onSelectDate: _selectDate,
                   onTaskDropped: _onTaskDropped,
-                  onTaskTap: _onTaskTap,
+                  onTaskTap: _onCalendarTaskTap,
                   onDateContextMenu: _onDateContextMenu,
                 ),
               ),
-              // 右侧滑出详情面板
+              // 日期专注面板（点击日期后显示）
+              DateFocusPanel(
+                isOpen: isDatePanelOpen,
+                selectedDate: _selectedDate,
+                sessions: _sessionsForSelectedDate,
+                taskMap: taskIdMap,
+                onClose: _closeDatePanel,
+                onTaskTap: _onDatePanelTaskTap,
+              ),
+              // 任务详情抽屉（点击任务条后显示，优先级高于日期面板）
               TaskDetailDrawer(
                 selectedTask: _selectedTask,
                 goals: provider.goals,
@@ -428,6 +471,7 @@ class _SchedulePageState extends State<SchedulePage> {
                 onEdit: _onEditSelectedTask,
                 onFocus: _onFocusSelectedTask,
                 onClose: _closeTaskDetail,
+                readOnly: _taskDetailFromDatePanel,
               ),
             ],
           ),
