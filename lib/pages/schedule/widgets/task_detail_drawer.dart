@@ -13,6 +13,10 @@ class TaskDetailDrawer extends StatelessWidget {
   final ValueChanged<Task>? onFocus;
   final VoidCallback onClose;
 
+  /// 只读模式：从专注记录进入时为 true
+  /// true → 显示返回箭头、隐藏编辑按钮；false → 显示关闭按钮
+  final bool readOnly;
+
   const TaskDetailDrawer({
     super.key,
     required this.selectedTask,
@@ -21,6 +25,7 @@ class TaskDetailDrawer extends StatelessWidget {
     this.onEdit,
     this.onFocus,
     required this.onClose,
+    this.readOnly = false,
   });
 
   @override
@@ -54,17 +59,69 @@ class TaskDetailDrawer extends StatelessWidget {
                 : null,
           ),
           child: selectedTask != null
-              ? TipsPanel(
-                  goals: goals,
-                  tasks: tasks,
-                  selectedTaskId: selectedTask!.id,
-                  selectedGoalId: selectedTask!.goalId,
-                  onEdit: onEdit,
-                  onFocus: onFocus,
-                  showFocusButton: true,
+              ? Column(
+                  children: [
+                    // 关闭 / 返回按钮头部
+                    _DrawerHeader(
+                      readOnly: readOnly,
+                      onClose: onClose,
+                    ),
+                    Expanded(
+                      child: TipsPanel(
+                        goals: goals,
+                        tasks: tasks,
+                        selectedTaskId: selectedTask!.id,
+                        selectedGoalId: selectedTask!.goalId,
+                        onEdit: readOnly ? null : onEdit,
+                        onFocus: onFocus,
+                        showFocusButton: true,
+                        readOnly: readOnly,
+                      ),
+                    ),
+                  ],
                 )
               : const SizedBox.shrink(),
         ),
+      ),
+    );
+  }
+}
+
+/// 抽屉顶部操作栏：返回箭头（只读模式）或关闭按钮
+class _DrawerHeader extends StatelessWidget {
+  final bool readOnly;
+  final VoidCallback onClose;
+
+  const _DrawerHeader({
+    required this.readOnly,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: AppTheme.spacingSm),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: colors.divider, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onClose,
+            icon: Icon(
+              readOnly ? Icons.arrow_back_ios_new : Icons.close,
+              size: AppTheme.iconSizeMd,
+              color: colors.textHint,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          ),
+        ],
       ),
     );
   }

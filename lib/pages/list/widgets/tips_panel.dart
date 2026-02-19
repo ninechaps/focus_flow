@@ -23,6 +23,9 @@ class TipsPanel extends StatelessWidget {
   final ValueChanged<Task>? onFocus;
   final bool showFocusButton;
 
+  /// 只读模式：隐藏编辑按钮，仅保留专注按钮
+  final bool readOnly;
+
   const TipsPanel({
     super.key,
     this.goals = const [],
@@ -32,6 +35,7 @@ class TipsPanel extends StatelessWidget {
     this.onEdit,
     this.onFocus,
     this.showFocusButton = true,
+    this.readOnly = false,
   });
 
   Task? get _selectedTask {
@@ -333,14 +337,16 @@ class TipsPanel extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              Expanded(
-                child: _DetailButton(
-                  label: '\u270F\uFE0F ${l10n.editButton}',
-                  onTap: onEdit,
+              if (!readOnly) ...[
+                Expanded(
+                  child: _DetailButton(
+                    label: '\u270F\uFE0F ${l10n.editButton}',
+                    onTap: task.status != TaskStatus.completed ? onEdit : null,
+                  ),
                 ),
-              ),
-              if (showFocusButton && task.parentTaskId != null) ...[
-                const SizedBox(width: 8),
+                if (showFocusButton) const SizedBox(width: 8),
+              ],
+              if (showFocusButton)
                 Expanded(
                   child: _DetailButton(
                     label: '\u25B6 ${l10n.startFocusButton}',
@@ -350,7 +356,6 @@ class TipsPanel extends StatelessWidget {
                         : null,
                   ),
                 ),
-              ],
             ],
           ),
         ),
@@ -922,13 +927,15 @@ class _DetailButtonState extends State<_DetailButton> {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           decoration: BoxDecoration(
             color: widget.isPrimary
-                ? (_isHovered ? colors.primaryHover : colors.primary)
+                ? (isDisabled
+                    ? colors.divider
+                    : (_isHovered ? colors.primaryHover : colors.primary))
                 : (_isHovered
                     ? colors.hoverBg
                     : colors.surface),
             border: Border.all(
               color: widget.isPrimary
-                  ? colors.primary
+                  ? (isDisabled ? colors.divider : colors.primary)
                   : colors.divider,
               width: 1,
             ),
@@ -940,10 +947,10 @@ class _DetailButtonState extends State<_DetailButton> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: widget.isPrimary
-                    ? Colors.white
-                    : (isDisabled
-                        ? colors.textHint
+                color: isDisabled
+                    ? colors.textHint
+                    : (widget.isPrimary
+                        ? Colors.white
                         : colors.textSecondary),
               ),
             ),
