@@ -88,6 +88,7 @@ class _SidebarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final l10n = AppLocalizations.of(context)!;
     final user = authProvider.currentUser;
     final username = user?.username ?? 'User';
@@ -246,6 +247,19 @@ class _SidebarContent extends StatelessWidget {
           ),
 
           const SizedBox(height: 20),
+
+          // ===== Trash =====
+          Divider(height: 1, color: colors.divider),
+          const SizedBox(height: 8),
+          _SidebarNavItem(
+            icon: Icons.delete_outline,
+            activeIcon: Icons.delete,
+            label: l10n.navTrash,
+            isActive: currentLocation == '/app/trash',
+            onTap: () => context.go('/app/trash'),
+          ),
+
+          const SizedBox(height: 8),
         ],
       ),
     );

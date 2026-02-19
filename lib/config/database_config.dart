@@ -4,17 +4,10 @@ class DatabaseConfig {
   /// Private constructor to prevent instantiation
   DatabaseConfig._();
 
-  /// Database name
-  static const String databaseName = 'focus_flow.db';
-
-  /// Current database version
-  /// Increment this when schema changes are needed
-  /// Version 3: Replace categories with goals, add goalId to tasks, date-only due dates
-  /// Version 4: Add focus_duration to tasks for tracking focus time
-  /// Version 5: Add completed_at to tasks for tracking completion time
-  /// Version 6: Add sort_order to tasks for drag-and-drop reordering
-  /// Version 7: Add focus_sessions table for session history
-  static const int databaseVersion = 7;
+  /// Current schema version for per-user database files.
+  /// Increment this when schema changes are needed for existing user DBs.
+  /// Version 1: Initial per-user schema (tasks, goals, tags, task_tags, focus_sessions)
+  static const int databaseVersion = 1;
 
   /// Table names
   static const String tableTask = 'tasks';

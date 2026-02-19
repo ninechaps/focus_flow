@@ -68,18 +68,9 @@ class _TaskGroupState extends State<TaskGroup> {
     switch (widget.title) {
       case 'Today':
         return '${l10n.groupToday} · ${dateFormat.format(now)}';
-      case 'Tomorrow':
-        final tomorrow = now.add(const Duration(days: 1));
-        return '${l10n.groupTomorrow} · ${dateFormat.format(tomorrow)}';
-      case 'This Week':
-        return l10n.groupThisWeek;
-      case 'Overdue':
-        return l10n.groupOverdue;
       case 'Yesterday':
         final yesterday = now.subtract(const Duration(days: 1));
         return '${l10n.groupYesterday} · ${dateFormat.format(yesterday)}';
-      case 'Later':
-        return l10n.groupLater;
       default:
         return widget.title;
     }
@@ -208,67 +199,37 @@ class _TaskGroupState extends State<TaskGroup> {
 
 /// Helper class to group tasks by date
 class TaskGroupHelper {
+  /// Groups tasks by creation date (createdAt), regardless of due date.
+  /// Due date is shown as a task attribute only, not used for grouping.
   static Map<String, List<Task>> groupTasksByDate(List<Task> tasks) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    final tomorrow = today.add(const Duration(days: 1));
-    final weekEnd = today.add(Duration(days: 7 - today.weekday));
 
-    final Map<String, List<Task>> groups = {};
-
-    groups['Overdue'] = [];
-    groups['Today'] = [];
-    groups['Tomorrow'] = [];
-    groups['This Week'] = [];
-    groups['Later'] = [];
-
-    final Map<String, List<Task>> createdDateGroups = {};
+    final Map<String, List<Task>> dateGroups = {};
 
     for (final task in tasks) {
-      if (task.dueDate == null) {
-        final createdDate = DateTime(
-          task.createdAt.year,
-          task.createdAt.month,
-          task.createdAt.day,
-        );
-
-        String groupKey;
-        if (createdDate == today) {
-          groupKey = 'Today';
-        } else if (createdDate == yesterday) {
-          groupKey = 'Yesterday';
-        } else {
-          groupKey = _formatFullDate(createdDate);
-        }
-
-        createdDateGroups.putIfAbsent(groupKey, () => []);
-        createdDateGroups[groupKey]!.add(task);
-        continue;
-      }
-
-      final taskDate = DateTime(
-        task.dueDate!.year,
-        task.dueDate!.month,
-        task.dueDate!.day,
+      final createdDate = DateTime(
+        task.createdAt.year,
+        task.createdAt.month,
+        task.createdAt.day,
       );
 
-      if (taskDate.isBefore(today)) {
-        groups['Overdue']!.add(task);
-      } else if (taskDate == today) {
-        groups['Today']!.add(task);
-      } else if (taskDate == tomorrow) {
-        groups['Tomorrow']!.add(task);
-      } else if (taskDate.isBefore(weekEnd) || taskDate == weekEnd) {
-        groups['This Week']!.add(task);
+      final String groupKey;
+      if (createdDate == today) {
+        groupKey = 'Today';
+      } else if (createdDate == yesterday) {
+        groupKey = 'Yesterday';
       } else {
-        groups['Later']!.add(task);
+        groupKey = _formatFullDate(createdDate);
       }
+
+      dateGroups.putIfAbsent(groupKey, () => []);
+      dateGroups[groupKey]!.add(task);
     }
 
-    groups.removeWhere((key, value) => value.isEmpty);
-
-    final sortedCreatedKeys = createdDateGroups.keys.toList()
+    // Sort: Today first, Yesterday second, then remaining dates descending
+    final sortedKeys = dateGroups.keys.toList()
       ..sort((a, b) {
         if (a == 'Today') return -1;
         if (b == 'Today') return 1;
@@ -277,15 +238,9 @@ class TaskGroupHelper {
         return b.compareTo(a);
       });
 
-    for (final key in sortedCreatedKeys) {
-      if (groups.containsKey(key)) {
-        groups[key]!.addAll(createdDateGroups[key]!);
-      } else {
-        groups[key] = createdDateGroups[key]!;
-      }
-    }
-
-    return groups;
+    return {
+      for (final key in sortedKeys) key: dateGroups[key]!,
+    };
   }
 
   static String? getGroupSubtitle(String groupName) {

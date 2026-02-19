@@ -41,7 +41,7 @@ class SqliteFocusSessionRepository implements IFocusSessionRepository {
   @override
   Future<ApiResponse<FocusSession>> create(FocusSession session) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       await db.insert(DatabaseConfig.tableFocusSession, _sessionToMap(session));
       return ApiResponse.success(session, message: 'Focus session created');
     } catch (e) {
@@ -52,7 +52,7 @@ class SqliteFocusSessionRepository implements IFocusSessionRepository {
   @override
   Future<ApiResponse<List<FocusSession>>> getByTask(String taskId) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final maps = await db.query(
         DatabaseConfig.tableFocusSession,
         where: '${DatabaseConfig.colTaskId} = ?',
@@ -73,7 +73,7 @@ class SqliteFocusSessionRepository implements IFocusSessionRepository {
     DateTime end,
   ) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final maps = await db.query(
         DatabaseConfig.tableFocusSession,
         where: '${DatabaseConfig.colStartedAt} >= ? AND ${DatabaseConfig.colStartedAt} <= ?',
@@ -91,7 +91,7 @@ class SqliteFocusSessionRepository implements IFocusSessionRepository {
   @override
   Future<ApiResponse<Map<String, int>>> getTodaySummary() async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final now = DateTime.now();
       final todayStart = DateTime(now.year, now.month, now.day);
       final todayEnd = todayStart.add(const Duration(days: 1));
@@ -120,7 +120,7 @@ class SqliteFocusSessionRepository implements IFocusSessionRepository {
   @override
   Future<ApiResponse<void>> delete(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final count = await db.delete(
         DatabaseConfig.tableFocusSession,
         where: '${DatabaseConfig.colId} = ?',

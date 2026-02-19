@@ -75,53 +75,31 @@ class _SchedulePageState extends State<SchedulePage> {
     }).toList();
   }
 
-  /// 过滤任务：顶层、非删除、有 dueDate，支持 Goal 过滤
+  /// 过滤任务：顶层、非删除，支持 Goal 过滤
+  /// 所有符合条件的任务都参与日历显示，按创建时间归档到对应日期格
   List<Task> _filterTasks(List<Task> tasks, {String? goalId}) {
     return tasks
         .where((t) =>
             t.parentTaskId == null &&
             t.status != TaskStatus.deleted &&
-            t.dueDate != null &&
             (goalId == null || t.goalId == goalId))
         .toList();
   }
 
-  /// 构建日期→任务映射，包含过期任务继承和无日期任务逻辑
+  /// 构建日期→任务映射：所有任务按 createdAt 归档到对应日历格
   Map<DateTime, List<Task>> _buildDateTaskMap(
-    List<Task> tasksWithDueDate,
-    List<Task> allTasks, {
+    List<Task> filteredTasks, {
     String? goalId,
   }) {
-    final now = DateTime.now();
-    final todayKey = DateTime(now.year, now.month, now.day);
     final map = <DateTime, List<Task>>{};
 
-    // 1. 有 dueDate 的任务按日期分组
-    for (final task in tasksWithDueDate) {
-      final d = task.dueDate!;
-      final key = DateTime(d.year, d.month, d.day);
+    for (final task in filteredTasks) {
+      final key = DateTime(
+        task.createdAt.year,
+        task.createdAt.month,
+        task.createdAt.day,
+      );
       (map[key] ??= []).add(task);
-
-      // 过期任务继承：dueDate 在今天之前且未完成，也加入今天的列表
-      if (key.isBefore(todayKey) &&
-          task.status != TaskStatus.completed &&
-          task.status != TaskStatus.deleted) {
-        final todayTasks = map[todayKey] ??= [];
-        if (!todayTasks.contains(task)) {
-          todayTasks.add(task);
-        }
-      }
-    }
-
-    // 2. 没有 dueDate 的未完成顶层任务，显示在今天
-    final unscheduledTasks = allTasks.where((t) =>
-        t.parentTaskId == null &&
-        t.dueDate == null &&
-        t.status != TaskStatus.completed &&
-        t.status != TaskStatus.deleted &&
-        (goalId == null || t.goalId == goalId));
-    for (final task in unscheduledTasks) {
-      (map[todayKey] ??= []).add(task);
     }
 
     return map;
@@ -410,7 +388,6 @@ class _SchedulePageState extends State<SchedulePage> {
         final validTasks = _filterTasks(provider.tasks, goalId: goalId);
         final dateTaskMap = _buildDateTaskMap(
           validTasks,
-          provider.tasks,
           goalId: goalId,
         );
         final subtaskProgressMap = _buildSubtaskProgressMap(provider.tasks);

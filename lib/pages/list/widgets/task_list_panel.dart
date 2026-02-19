@@ -102,7 +102,7 @@ class TaskListPanel extends StatelessWidget {
                           tasks: entry.value,
                           subtasksMap: subtasksMap,
                           selectedTaskId: selectedTaskId,
-                          initiallyExpanded: entry.key != 'Later',
+                          initiallyExpanded: true,
                           onTaskStatusChanged: onTaskStatusChanged,
                           onTaskTap: onTaskTap,
                           onAddSubtask: onAddSubtask,

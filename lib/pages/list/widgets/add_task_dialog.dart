@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../models/task.dart';
 import '../../../models/tag.dart';
 import '../../../models/goal.dart';
 import '../../../models/enums.dart';
+import '../../../providers/user_preferences_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/app_text_field.dart';
 import '../../../widgets/dropdown.dart';
@@ -41,7 +43,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
 
-  TaskPriority _priority = TaskPriority.medium;
+  TaskPriority _priority = TaskPriority.medium; // overridden in initState
   DateTime? _dueDate;
   String? _selectedGoalId;
   final Set<String> _selectedTagIds = {};
@@ -63,6 +65,11 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     } else {
       _selectedGoalId = widget.defaultGoalId;
       _dueDate = widget.defaultDueDate;
+      // Apply user's default priority preference for new tasks
+      final defaultPriority = context.read<UserPreferencesProvider>().defaultPriority;
+      if (defaultPriority != null) {
+        _priority = defaultPriority;
+      }
     }
   }
 

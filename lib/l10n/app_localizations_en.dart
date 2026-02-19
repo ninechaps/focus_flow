@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navSettings => 'Settings';
 
   @override
+  String get navTrash => 'Trash';
+
+  @override
   String get scheduleFilterTitle => 'Schedule';
 
   @override
@@ -580,7 +583,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageEnglish => 'English';
 
   @override
-  String get settingsMoreComing => 'More settings coming soon';
+  String get settingsGeneral => 'General';
+
+  @override
+  String get settingsStartupPage => 'Startup Page';
+
+  @override
+  String get settingsStartupPageHint => 'Default page when opening the app';
+
+  @override
+  String get settingsStartupList => 'Task List';
+
+  @override
+  String get settingsStartupSchedule => 'Schedule';
+
+  @override
+  String get settingsTaskDefaults => 'Tasks';
+
+  @override
+  String get settingsDefaultPriority => 'Default Task Priority';
+
+  @override
+  String get settingsDefaultPriorityHint =>
+      'Pre-selected priority when creating a task';
+
+  @override
+  String get settingsPriorityNone => 'None';
+
+  @override
+  String get settingsNotifications => 'Notifications';
+
+  @override
+  String get settingsDailyReminder => 'Daily Task Reminder';
+
+  @override
+  String get settingsDailyReminderHint =>
+      'Show a reminder at the scheduled time each day';
+
+  @override
+  String get settingsDailyReminderTime => 'Reminder Time';
+
+  @override
+  String get settingsChangeTime => 'Change Time';
+
+  @override
+  String get notificationDailyReminderTitle => 'Daily Task Reminder';
+
+  @override
+  String get notificationDailyReminderBody =>
+      'Open Focus Hut and plan your tasks for today';
 
   @override
   String get settingsDebugTitle => 'Developer Options';
@@ -813,6 +864,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get profileAccountInfo => 'Account Info';
+
+  @override
+  String get profileMemberSince => 'Member Since';
+
+  @override
+  String get profileEmailVerified => 'Email Verified';
+
+  @override
+  String get profileVerified => 'Verified';
+
+  @override
+  String get profileNotVerified => 'Not Verified';
+
+  @override
+  String get profileRegistrationSource => 'Registration Source';
+
+  @override
+  String get profileTotalOnlineTime => 'Total Online Time';
+
+  @override
+  String profileOnlineTimeFormat(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String get profileLogout => 'Sign Out';
+
+  @override
+  String get profileLogoutConfirmTitle => 'Sign Out';
+
+  @override
+  String get profileLogoutConfirmContent =>
+      'Are you sure you want to sign out?';
+
+  @override
   String get datePickerSelectDate => 'Select date';
 
   @override
@@ -910,4 +997,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleOverdueTask => 'Overdue';
+
+  @override
+  String get trashTitle => 'Trash';
+
+  @override
+  String get trashEmpty => 'Trash is empty';
+
+  @override
+  String get trashEmptyHint => 'Deleted tasks will appear here';
+
+  @override
+  String get trashRestore => 'Restore';
+
+  @override
+  String get trashRestoreSuccess => 'Task restored';
+
+  @override
+  String get trashParentContext => 'Parent Task';
+
+  @override
+  String get trashDeletedSubtask => 'Deleted subtask';
 }

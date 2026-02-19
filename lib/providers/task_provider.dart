@@ -20,6 +20,7 @@ class TaskProvider extends ChangeNotifier {
   List<Tag> _tags = [];
   List<Goal> _goals = [];
   Map<String, List<Task>> _subtasksMap = {};
+  List<Task> _deletedTasks = [];
 
   bool _isLoading = false;
   String? _error;
@@ -44,6 +45,7 @@ class TaskProvider extends ChangeNotifier {
   List<Tag> get tags => _tags;
   List<Goal> get goals => _goals;
   Map<String, List<Task>> get subtasksMap => _subtasksMap;
+  List<Task> get deletedTasks => _deletedTasks;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String? get selectedTimeFilter => _selectedTimeFilter;
@@ -444,6 +446,37 @@ class TaskProvider extends ChangeNotifier {
         throw Exception(response.message);
       }
       await _loadTasks();
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Load all soft-deleted tasks (for trash page)
+  Future<void> loadDeletedTasks() async {
+    try {
+      final response = await _taskRepository.getDeleted();
+      if (response.isSuccess && response.data != null) {
+        _deletedTasks = response.data!;
+        notifyListeners();
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+  }
+
+  /// Restore a soft-deleted task back to pending
+  Future<void> restoreTask(String taskId) async {
+    try {
+      final response = await _taskRepository.restore(taskId);
+      if (response.isError) {
+        throw Exception(response.message);
+      }
+      // Reload both active tasks and deleted tasks list
+      await Future.wait([_loadTasks(), loadDeletedTasks()]);
       notifyListeners();
     } catch (e) {
       _error = e.toString();

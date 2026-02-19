@@ -9,9 +9,14 @@ import './pages/profile/index.dart';
 import './pages/setting/index.dart';
 import './pages/statistics/index.dart';
 import './pages/focus/index.dart';
+import './pages/trash/index.dart';
 import './providers/auth_provider.dart';
+import './providers/user_preferences_provider.dart';
 
-GoRouter router({required AuthProvider authProvider}) {
+GoRouter router({
+  required AuthProvider authProvider,
+  required UserPreferencesProvider userPreferences,
+}) {
   return GoRouter(
     initialLocation: '/login',
     refreshListenable: authProvider,
@@ -26,8 +31,8 @@ GoRouter router({required AuthProvider authProvider}) {
       // Not authenticated → force to login page
       if (!isLoggedIn && !isLoginRoute) return '/login';
 
-      // Already authenticated → redirect away from login
-      if (isLoggedIn && isLoginRoute) return '/app/list';
+      // Already authenticated → redirect away from login to startup page
+      if (isLoggedIn && isLoginRoute) return '/app/${userPreferences.startupPage}';
 
       return null;
     },
@@ -42,10 +47,10 @@ GoRouter router({required AuthProvider authProvider}) {
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
-          // Default app route redirects to list
+          // Default app route redirects to startup page
           GoRoute(
             path: '/app',
-            redirect: (context, state) => '/app/list',
+            redirect: (context, state) => '/app/${userPreferences.startupPage}',
           ),
 
           // List page - main task list
@@ -103,6 +108,15 @@ GoRouter router({required AuthProvider authProvider}) {
                 FocusPage(taskId: taskId),
               );
             },
+          ),
+
+          // Trash page - soft-deleted tasks
+          GoRoute(
+            path: '/app/trash',
+            pageBuilder: (context, state) => _buildPageWithoutAnimation(
+              state,
+              const TrashPage(),
+            ),
           ),
         ],
       ),

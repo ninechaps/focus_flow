@@ -6,53 +6,92 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../config/database_config.dart';
 
-/// Database helper class for SQLite operations
-/// Handles database initialization, table creation, and provides utility methods
+/// Database helper for SQLite operations.
+/// Each user gets an independent database file for complete data isolation.
 class DatabaseHelper {
-  static DatabaseHelper? _instance;
-  static Database? _database;
+  static final DatabaseHelper instance = DatabaseHelper._internal();
 
-  DatabaseHelper._();
+  Database? _database;
 
-  /// Singleton instance
-  static DatabaseHelper get instance {
-    _instance ??= DatabaseHelper._();
-    return _instance!;
-  }
+  DatabaseHelper._internal();
 
-  /// Get database instance
-  Future<Database> get database async {
-    _database ??= await _initDatabase();
-    return _database!;
-  }
+  static bool _ffiInitialized = false;
 
-  /// Initialize the database
-  Future<Database> _initDatabase() async {
-    // Initialize FFI for desktop platforms
+  static void _ensureFfiInitialized() {
+    if (_ffiInitialized) return;
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }
+    _ffiInitialized = true;
+  }
+
+  /// Get the current database.
+  /// Throws [StateError] if [initForUser] has not been called yet.
+  Database get database {
+    if (_database == null) {
+      throw StateError(
+        'Database not initialized. Call initForUser() after successful login.',
+      );
+    }
+    return _database!;
+  }
+
+  /// Open the user-specific database file.
+  ///
+  /// Must be called after successful login or token validation.
+  /// Closes any existing connection before opening the new one.
+  Future<void> initForUser(String userId) async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+
+    _ensureFfiInitialized();
 
     final Directory documentsDirectory =
         await getApplicationDocumentsDirectory();
-    final String path = join(documentsDirectory.path, DatabaseConfig.databaseName);
+    final String dbDir = join(documentsDirectory.path, 'focus_flow');
+
+    await Directory(dbDir).create(recursive: true);
+
+    // Sanitize userId to be safe for filenames
+    final sanitizedUserId = userId.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+    final String path = join(dbDir, 'user_$sanitizedUserId.db');
 
     if (DatabaseConfig.debugMode) {
-      debugPrint('Database path: $path');
+      debugPrint('[DB] Opening database for user: $userId');
+      debugPrint('[DB] Database path: $path');
     }
 
-    return await openDatabase(
+    _database = await openDatabase(
       path,
       version: DatabaseConfig.databaseVersion,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+
+    if (DatabaseConfig.debugMode) {
+      debugPrint('[DB] Database ready for user: $userId');
+    }
   }
 
-  /// Create database tables
+  /// Close the current database connection.
+  ///
+  /// Call on logout to ensure clean state before the next user logs in.
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+      if (DatabaseConfig.debugMode) {
+        debugPrint('[DB] Database connection closed');
+      }
+    }
+  }
+
+  /// Create all tables for a fresh user database
   Future<void> _onCreate(Database db, int version) async {
-    // Create tags table
+    // tags table
     await db.execute('''
       CREATE TABLE ${DatabaseConfig.tableTag} (
         ${DatabaseConfig.colId} TEXT PRIMARY KEY,
@@ -63,7 +102,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create goals table
+    // goals table
     await db.execute('''
       CREATE TABLE ${DatabaseConfig.tableGoal} (
         ${DatabaseConfig.colId} TEXT PRIMARY KEY,
@@ -74,7 +113,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create tasks table
+    // tasks table
     await db.execute('''
       CREATE TABLE ${DatabaseConfig.tableTask} (
         ${DatabaseConfig.colId} TEXT PRIMARY KEY,
@@ -95,7 +134,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create task_tags junction table for many-to-many relationship
+    // task_tags junction table
     await db.execute('''
       CREATE TABLE ${DatabaseConfig.tableTaskTag} (
         ${DatabaseConfig.colTaskId} TEXT NOT NULL,
@@ -106,7 +145,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create focus_sessions table
+    // focus_sessions table
     await db.execute('''
       CREATE TABLE ${DatabaseConfig.tableFocusSession} (
         ${DatabaseConfig.colId} TEXT PRIMARY KEY,
@@ -122,131 +161,49 @@ class DatabaseHelper {
       )
     ''');
 
-    // Create indexes for better query performance
-    await db.execute('''
-      CREATE INDEX idx_tasks_parent ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colParentTaskId})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_tasks_status ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colStatus})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_tasks_due_date ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colDueDate})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_tasks_goal ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colGoalId})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_task_tags_task ON ${DatabaseConfig.tableTaskTag}(${DatabaseConfig.colTaskId})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_task_tags_tag ON ${DatabaseConfig.tableTaskTag}(${DatabaseConfig.colTagId})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_focus_sessions_task ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colTaskId})
-    ''');
-    await db.execute('''
-      CREATE INDEX idx_focus_sessions_started_at ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colStartedAt})
-    ''');
+    // Indexes
+    await db.execute(
+      'CREATE INDEX idx_tasks_parent ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colParentTaskId})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_tasks_status ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colStatus})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_tasks_due_date ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colDueDate})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_tasks_goal ON ${DatabaseConfig.tableTask}(${DatabaseConfig.colGoalId})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_task_tags_task ON ${DatabaseConfig.tableTaskTag}(${DatabaseConfig.colTaskId})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_task_tags_tag ON ${DatabaseConfig.tableTaskTag}(${DatabaseConfig.colTagId})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_focus_sessions_task ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colTaskId})',
+    );
+    await db.execute(
+      'CREATE INDEX idx_focus_sessions_started_at ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colStartedAt})',
+    );
 
     if (DatabaseConfig.debugMode) {
-      debugPrint('Database tables created successfully');
+      debugPrint('[DB] Tables created successfully (v$version)');
     }
   }
 
-  /// Handle database upgrades
+  /// Handle schema upgrades for future versions
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (DatabaseConfig.debugMode) {
-      debugPrint('Upgrading database from version $oldVersion to $newVersion');
+      debugPrint('[DB] Upgrading from v$oldVersion to v$newVersion');
     }
-
-    // Migration to v3: Replace categories with goals, restructure tasks
-    // Drop all tables and recreate (user approved database reset)
-    if (oldVersion < 3) {
-      // Drop all existing tables
-      await db.execute('DROP TABLE IF EXISTS ${DatabaseConfig.tableTaskTag}');
-      await db.execute('DROP TABLE IF EXISTS ${DatabaseConfig.tableTask}');
-      await db.execute('DROP TABLE IF EXISTS categories'); // Old table name
-      await db.execute('DROP TABLE IF EXISTS ${DatabaseConfig.tableTag}');
-
-      // Recreate all tables with new schema
-      await _onCreate(db, newVersion);
-
-      if (DatabaseConfig.debugMode) {
-        debugPrint('Database reset for v3 migration - categories replaced with goals');
-      }
-    }
-
-    // Migration to v4: Add focus_duration column to tasks
-    if (oldVersion < 4 && oldVersion >= 3) {
-      await db.execute('''
-        ALTER TABLE ${DatabaseConfig.tableTask}
-        ADD COLUMN ${DatabaseConfig.colFocusDuration} INTEGER NOT NULL DEFAULT 0
-      ''');
-
-      if (DatabaseConfig.debugMode) {
-        debugPrint('Database upgraded to v4 - added focus_duration column');
-      }
-    }
-
-    // Migration to v5: Add completed_at column to tasks
-    if (oldVersion < 5 && oldVersion >= 3) {
-      await db.execute('''
-        ALTER TABLE ${DatabaseConfig.tableTask}
-        ADD COLUMN ${DatabaseConfig.colCompletedAt} TEXT
-      ''');
-
-      if (DatabaseConfig.debugMode) {
-        debugPrint('Database upgraded to v5 - added completed_at column');
-      }
-    }
-
-    // Migration to v6: Add sort_order column to tasks
-    if (oldVersion < 6 && oldVersion >= 3) {
-      await db.execute('''
-        ALTER TABLE ${DatabaseConfig.tableTask}
-        ADD COLUMN ${DatabaseConfig.colSortOrder} INTEGER NOT NULL DEFAULT 0
-      ''');
-
-      if (DatabaseConfig.debugMode) {
-        debugPrint('Database upgraded to v6 - added sort_order column');
-      }
-    }
-
-    // Migration to v7: Add focus_sessions table
-    if (oldVersion < 7) {
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS ${DatabaseConfig.tableFocusSession} (
-          ${DatabaseConfig.colId} TEXT PRIMARY KEY,
-          ${DatabaseConfig.colTaskId} TEXT NOT NULL,
-          ${DatabaseConfig.colStartedAt} TEXT NOT NULL,
-          ${DatabaseConfig.colEndedAt} TEXT,
-          ${DatabaseConfig.colDurationSeconds} INTEGER NOT NULL DEFAULT 0,
-          ${DatabaseConfig.colTargetSeconds} INTEGER NOT NULL DEFAULT 0,
-          ${DatabaseConfig.colTimerMode} TEXT NOT NULL DEFAULT 'countdown',
-          ${DatabaseConfig.colCompletionType} TEXT NOT NULL DEFAULT 'stopped',
-          ${DatabaseConfig.colCreatedAt} TEXT NOT NULL,
-          FOREIGN KEY (${DatabaseConfig.colTaskId}) REFERENCES ${DatabaseConfig.tableTask}(${DatabaseConfig.colId}) ON DELETE CASCADE
-        )
-      ''');
-      await db.execute('''
-        CREATE INDEX IF NOT EXISTS idx_focus_sessions_task ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colTaskId})
-      ''');
-      await db.execute('''
-        CREATE INDEX IF NOT EXISTS idx_focus_sessions_started_at ON ${DatabaseConfig.tableFocusSession}(${DatabaseConfig.colStartedAt})
-      ''');
-
-      if (DatabaseConfig.debugMode) {
-        debugPrint('Database upgraded to v7 - added focus_sessions table');
-      }
-    }
+    // Future upgrade migrations go here.
   }
 
-  /// Clear all data from the database
-  /// This is for testing purposes and should be removed before release
+  /// Clear all user data from the database.
+  /// WARNING: This deletes all data. For dev/testing use only.
   Future<void> clearAllData() async {
-    final db = await database;
-
-    // Delete all data in reverse order of dependencies
+    final db = database;
     await db.delete(DatabaseConfig.tableFocusSession);
     await db.delete(DatabaseConfig.tableTaskTag);
     await db.delete(DatabaseConfig.tableTask);
@@ -254,42 +211,7 @@ class DatabaseHelper {
     await db.delete(DatabaseConfig.tableTag);
 
     if (DatabaseConfig.debugMode) {
-      debugPrint('All data cleared from database');
+      debugPrint('[DB] All data cleared');
     }
-  }
-
-  /// Close database connection
-  Future<void> close() async {
-    if (_database != null) {
-      await _database!.close();
-      _database = null;
-    }
-  }
-
-  /// Delete the database file completely and recreate empty tables
-  Future<void> deleteAndRecreateDatabase() async {
-    await close();
-
-    final Directory documentsDirectory =
-        await getApplicationDocumentsDirectory();
-    final String path = join(documentsDirectory.path, DatabaseConfig.databaseName);
-
-    final file = File(path);
-    if (await file.exists()) {
-      await file.delete();
-      if (DatabaseConfig.debugMode) {
-        debugPrint('Database file deleted: $path');
-      }
-    }
-
-    // Reset instance so database will be recreated on next access
-    _instance = null;
-    _database = null;
-  }
-
-  /// Reset singleton (for testing)
-  static void resetInstance() {
-    _instance = null;
-    _database = null;
   }
 }

@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get navSettings;
 
+  /// No description provided for @navTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get navTrash;
+
   /// No description provided for @scheduleFilterTitle.
   ///
   /// In en, this message translates to:
@@ -1160,11 +1166,101 @@ abstract class AppLocalizations {
   /// **'English'**
   String get settingsLanguageEnglish;
 
-  /// No description provided for @settingsMoreComing.
+  /// No description provided for @settingsGeneral.
   ///
   /// In en, this message translates to:
-  /// **'More settings coming soon'**
-  String get settingsMoreComing;
+  /// **'General'**
+  String get settingsGeneral;
+
+  /// No description provided for @settingsStartupPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Startup Page'**
+  String get settingsStartupPage;
+
+  /// No description provided for @settingsStartupPageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Default page when opening the app'**
+  String get settingsStartupPageHint;
+
+  /// No description provided for @settingsStartupList.
+  ///
+  /// In en, this message translates to:
+  /// **'Task List'**
+  String get settingsStartupList;
+
+  /// No description provided for @settingsStartupSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get settingsStartupSchedule;
+
+  /// No description provided for @settingsTaskDefaults.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get settingsTaskDefaults;
+
+  /// No description provided for @settingsDefaultPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Default Task Priority'**
+  String get settingsDefaultPriority;
+
+  /// No description provided for @settingsDefaultPriorityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-selected priority when creating a task'**
+  String get settingsDefaultPriorityHint;
+
+  /// No description provided for @settingsPriorityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get settingsPriorityNone;
+
+  /// No description provided for @settingsNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsNotifications;
+
+  /// No description provided for @settingsDailyReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Task Reminder'**
+  String get settingsDailyReminder;
+
+  /// No description provided for @settingsDailyReminderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Show a reminder at the scheduled time each day'**
+  String get settingsDailyReminderHint;
+
+  /// No description provided for @settingsDailyReminderTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder Time'**
+  String get settingsDailyReminderTime;
+
+  /// No description provided for @settingsChangeTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Time'**
+  String get settingsChangeTime;
+
+  /// No description provided for @notificationDailyReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Task Reminder'**
+  String get notificationDailyReminderTitle;
+
+  /// No description provided for @notificationDailyReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Focus Hut and plan your tasks for today'**
+  String get notificationDailyReminderBody;
 
   /// No description provided for @settingsDebugTitle.
   ///
@@ -1598,6 +1694,72 @@ abstract class AppLocalizations {
   /// **'Last login: {time}'**
   String profileLastLogin(String time);
 
+  /// No description provided for @profileAccountInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Info'**
+  String get profileAccountInfo;
+
+  /// No description provided for @profileMemberSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Member Since'**
+  String get profileMemberSince;
+
+  /// No description provided for @profileEmailVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Verified'**
+  String get profileEmailVerified;
+
+  /// No description provided for @profileVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get profileVerified;
+
+  /// No description provided for @profileNotVerified.
+  ///
+  /// In en, this message translates to:
+  /// **'Not Verified'**
+  String get profileNotVerified;
+
+  /// No description provided for @profileRegistrationSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration Source'**
+  String get profileRegistrationSource;
+
+  /// No description provided for @profileTotalOnlineTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Online Time'**
+  String get profileTotalOnlineTime;
+
+  /// No description provided for @profileOnlineTimeFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String profileOnlineTimeFormat(int hours, int minutes);
+
+  /// No description provided for @profileLogout.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get profileLogout;
+
+  /// No description provided for @profileLogoutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get profileLogoutConfirmTitle;
+
+  /// No description provided for @profileLogoutConfirmContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out?'**
+  String get profileLogoutConfirmContent;
+
   /// No description provided for @datePickerSelectDate.
   ///
   /// In en, this message translates to:
@@ -1777,6 +1939,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Overdue'**
   String get scheduleOverdueTask;
+
+  /// No description provided for @trashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get trashTitle;
+
+  /// No description provided for @trashEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash is empty'**
+  String get trashEmpty;
+
+  /// No description provided for @trashEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted tasks will appear here'**
+  String get trashEmptyHint;
+
+  /// No description provided for @trashRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get trashRestore;
+
+  /// No description provided for @trashRestoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Task restored'**
+  String get trashRestoreSuccess;
+
+  /// No description provided for @trashParentContext.
+  ///
+  /// In en, this message translates to:
+  /// **'Parent Task'**
+  String get trashParentContext;
+
+  /// No description provided for @trashDeletedSubtask.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted subtask'**
+  String get trashDeletedSubtask;
 }
 
 class _AppLocalizationsDelegate

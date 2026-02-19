@@ -27,12 +27,12 @@ class RepositoryProvider {
     return _instance!;
   }
 
-  /// Initialize repositories with SQLite database
+  /// Initialize repository instances.
+  ///
+  /// Note: The database connection is NOT opened here.
+  /// Call [DatabaseHelper.instance.initForUser] after login to open the DB.
   Future<void> init() async {
     if (_initialized) return;
-
-    // Initialize database (this will create tables if needed)
-    await DatabaseHelper.instance.database;
 
     _taskRepository = SqliteTaskRepository();
     _tagRepository = SqliteTagRepository();
@@ -81,8 +81,7 @@ class RepositoryProvider {
   /// Reset instance (for testing)
   static Future<void> reset() async {
     if (_instance != null) {
-      await DatabaseHelper.instance.close();
-      DatabaseHelper.resetInstance();
+      await DatabaseHelper.instance.closeDatabase();
     }
     _instance = null;
   }

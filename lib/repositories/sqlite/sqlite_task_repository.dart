@@ -38,7 +38,7 @@ class SqliteTaskRepository implements ITaskRepository {
   Future<Goal?> _getGoalForTask(String? goalId) async {
     if (goalId == null) return null;
 
-    final db = await _dbHelper.database;
+    final db = _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
       DatabaseConfig.tableGoal,
       where: '${DatabaseConfig.colId} = ?',
@@ -102,7 +102,7 @@ class SqliteTaskRepository implements ITaskRepository {
 
   /// Get tags for a specific task
   Future<List<Tag>> _getTagsForTask(String taskId) async {
-    final db = await _dbHelper.database;
+    final db = _dbHelper.database;
 
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT t.* FROM ${DatabaseConfig.tableTag} t
@@ -115,16 +115,14 @@ class SqliteTaskRepository implements ITaskRepository {
 
   /// Update task-tag associations
   Future<void> _updateTaskTags(String taskId, List<Tag> tags) async {
-    final db = await _dbHelper.database;
+    final db = _dbHelper.database;
 
-    // Delete existing associations
     await db.delete(
       DatabaseConfig.tableTaskTag,
       where: '${DatabaseConfig.colTaskId} = ?',
       whereArgs: [taskId],
     );
 
-    // Insert new associations
     for (final tag in tags) {
       await db.insert(DatabaseConfig.tableTaskTag, {
         DatabaseConfig.colTaskId: taskId,
@@ -136,16 +134,19 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<List<Task>>> getAll() async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
-        orderBy: '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
+        where: "${DatabaseConfig.colStatus} != 'deleted'",
+        orderBy:
+            '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
       );
 
       final List<Task> tasks = [];
       for (final map in maps) {
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         tasks.add(_mapToTask(map, tags, goal: goal));
       }
 
@@ -158,7 +159,7 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<Task>> getById(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -171,7 +172,8 @@ class SqliteTaskRepository implements ITaskRepository {
       }
 
       final tags = await _getTagsForTask(id);
-      final goal = await _getGoalForTask(maps.first[DatabaseConfig.colGoalId] as String?);
+      final goal =
+          await _getGoalForTask(maps.first[DatabaseConfig.colGoalId] as String?);
       return ApiResponse.success(_mapToTask(maps.first, tags, goal: goal));
     } catch (e) {
       return ApiResponse.error('Failed to fetch task: $e');
@@ -181,18 +183,20 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<List<Task>>> getSubtasks(String parentId) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
-        where: '${DatabaseConfig.colParentTaskId} = ?',
+        where: "${DatabaseConfig.colParentTaskId} = ? AND ${DatabaseConfig.colStatus} != 'deleted'",
         whereArgs: [parentId],
-        orderBy: '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
+        orderBy:
+            '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
       );
 
       final List<Task> tasks = [];
       for (final map in maps) {
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         tasks.add(_mapToTask(map, tags, goal: goal));
       }
 
@@ -205,17 +209,19 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<List<Task>>> getTopLevelTasks() async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
-        where: '${DatabaseConfig.colParentTaskId} IS NULL',
-        orderBy: '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
+        where: "${DatabaseConfig.colParentTaskId} IS NULL AND ${DatabaseConfig.colStatus} != 'deleted'",
+        orderBy:
+            '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
       );
 
       final List<Task> tasks = [];
       for (final map in maps) {
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         tasks.add(_mapToTask(map, tags, goal: goal));
       }
 
@@ -228,25 +234,23 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<Map<String, List<Task>>>> getSubtasksMap() async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
-        where: '${DatabaseConfig.colParentTaskId} IS NOT NULL',
-        orderBy: '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
+        where: "${DatabaseConfig.colParentTaskId} IS NOT NULL AND ${DatabaseConfig.colStatus} != 'deleted'",
+        orderBy:
+            '${DatabaseConfig.colSortOrder} ASC, ${DatabaseConfig.colCreatedAt} DESC',
       );
 
       final Map<String, List<Task>> subtasksMap = {};
       for (final map in maps) {
         final parentId = map[DatabaseConfig.colParentTaskId] as String;
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         final task = _mapToTask(map, tags, goal: goal);
 
-        if (subtasksMap.containsKey(parentId)) {
-          subtasksMap[parentId]!.add(task);
-        } else {
-          subtasksMap[parentId] = [task];
-        }
+        subtasksMap.putIfAbsent(parentId, () => []).add(task);
       }
 
       return ApiResponse.success(subtasksMap);
@@ -258,7 +262,7 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<Task>> create(Task task) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
       // Validate: subtasks cannot have further subtasks (single-level only)
       if (task.parentTaskId != null) {
@@ -280,8 +284,6 @@ class SqliteTaskRepository implements ITaskRepository {
       }
 
       await db.insert(DatabaseConfig.tableTask, _taskToMap(task));
-
-      // Insert task-tag associations
       await _updateTaskTags(task.id, task.tags);
 
       return ApiResponse.success(task, message: 'Task created successfully');
@@ -293,9 +295,8 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<Task>> update(Task task) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if task exists
       final existing = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -315,7 +316,6 @@ class SqliteTaskRepository implements ITaskRepository {
         whereArgs: [task.id],
       );
 
-      // Update task-tag associations
       await _updateTaskTags(task.id, task.tags);
 
       return ApiResponse.success(updatedTask, message: 'Task updated successfully');
@@ -327,9 +327,8 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<Task>> toggleStatus(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Get current task
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -348,17 +347,16 @@ class SqliteTaskRepository implements ITaskRepository {
         orElse: () => TaskStatus.pending,
       );
 
-      // Check if this is a parent task with subtasks
       final subtasksMaps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colParentTaskId} = ?',
         whereArgs: [id],
       );
 
-      // Rule 2: Prevent parent task from being directly marked as completed if it has incomplete subtasks
-      // Only block if: 1) this is a parent task (not a subtask), 2) trying to complete it, 3) has incomplete subtasks
-      if (parentTaskId == null && subtasksMaps.isNotEmpty && currentStatus == TaskStatus.pending) {
-        // Check if there are any incomplete subtasks
+      // Prevent completing a parent task that has incomplete subtasks
+      if (parentTaskId == null &&
+          subtasksMaps.isNotEmpty &&
+          currentStatus == TaskStatus.pending) {
         final hasIncompleteSubtasks = subtasksMaps.any((subtask) {
           final status = TaskStatus.values.firstWhere(
             (e) => e.name == subtask[DatabaseConfig.colStatus],
@@ -393,9 +391,10 @@ class SqliteTaskRepository implements ITaskRepository {
         whereArgs: [id],
       );
 
-      // Rule 3: If this is a parent task being uncompleted, uncomplete all subtasks
-      if (parentTaskId == null && newStatus == TaskStatus.pending && subtasksMaps.isNotEmpty) {
-        // Uncomplete all subtasks
+      // If parent is uncompleted, uncomplete all subtasks
+      if (parentTaskId == null &&
+          newStatus == TaskStatus.pending &&
+          subtasksMaps.isNotEmpty) {
         await db.update(
           DatabaseConfig.tableTask,
           {
@@ -408,16 +407,14 @@ class SqliteTaskRepository implements ITaskRepository {
         );
       }
 
-      // Rule 1: If this is a subtask, check if parent should be auto-completed
+      // If a subtask is completed, check if parent should be auto-completed
       if (parentTaskId != null && newStatus == TaskStatus.completed) {
-        // Get all subtasks of the parent
         final allSubtasksMaps = await db.query(
           DatabaseConfig.tableTask,
           where: '${DatabaseConfig.colParentTaskId} = ?',
           whereArgs: [parentTaskId],
         );
 
-        // Check if all subtasks are now completed
         final allCompleted = allSubtasksMaps.every((subtask) {
           final status = TaskStatus.values.firstWhere(
             (e) => e.name == subtask[DatabaseConfig.colStatus],
@@ -426,14 +423,14 @@ class SqliteTaskRepository implements ITaskRepository {
           return status == TaskStatus.completed;
         });
 
-        // If all subtasks are completed, auto-complete the parent
         if (allCompleted) {
           final parentCompletedAt = DateTime.now();
           await db.update(
             DatabaseConfig.tableTask,
             {
               DatabaseConfig.colStatus: TaskStatus.completed.name,
-              DatabaseConfig.colCompletedAt: parentCompletedAt.toIso8601String(),
+              DatabaseConfig.colCompletedAt:
+                  parentCompletedAt.toIso8601String(),
               DatabaseConfig.colUpdatedAt: parentCompletedAt.toIso8601String(),
             },
             where: '${DatabaseConfig.colId} = ?',
@@ -442,7 +439,7 @@ class SqliteTaskRepository implements ITaskRepository {
         }
       }
 
-      // Rule 1: If this is a subtask being uncompleted, uncomplete the parent as well
+      // If a subtask is uncompleted, uncomplete the parent as well
       if (parentTaskId != null && newStatus == TaskStatus.pending) {
         final parentMaps = await db.query(
           DatabaseConfig.tableTask,
@@ -457,7 +454,6 @@ class SqliteTaskRepository implements ITaskRepository {
             orElse: () => TaskStatus.pending,
           );
 
-          // If parent is completed, uncomplete it
           if (parentStatus == TaskStatus.completed) {
             await db.update(
               DatabaseConfig.tableTask,
@@ -473,7 +469,6 @@ class SqliteTaskRepository implements ITaskRepository {
         }
       }
 
-      // Fetch updated task
       final updatedMaps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -482,7 +477,8 @@ class SqliteTaskRepository implements ITaskRepository {
       );
 
       final tags = await _getTagsForTask(id);
-      final goal = await _getGoalForTask(updatedMaps.first[DatabaseConfig.colGoalId] as String?);
+      final goal = await _getGoalForTask(
+          updatedMaps.first[DatabaseConfig.colGoalId] as String?);
       return ApiResponse.success(
         _mapToTask(updatedMaps.first, tags, goal: goal),
         message: 'Task status toggled successfully',
@@ -495,9 +491,8 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<void>> delete(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if task exists
       final existing = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -509,23 +504,26 @@ class SqliteTaskRepository implements ITaskRepository {
         return ApiResponse.notFound('Task not found: $id');
       }
 
-      // Delete subtasks first (cascade should handle this, but being explicit)
-      await db.delete(
+      final now = DateTime.now().toIso8601String();
+
+      // Soft-delete all subtasks of this task
+      await db.update(
         DatabaseConfig.tableTask,
+        {
+          DatabaseConfig.colStatus: TaskStatus.deleted.name,
+          DatabaseConfig.colUpdatedAt: now,
+        },
         where: '${DatabaseConfig.colParentTaskId} = ?',
         whereArgs: [id],
       );
 
-      // Delete task-tag associations (cascade should handle this)
-      await db.delete(
-        DatabaseConfig.tableTaskTag,
-        where: '${DatabaseConfig.colTaskId} = ?',
-        whereArgs: [id],
-      );
-
-      // Delete the task
-      await db.delete(
+      // Soft-delete the task itself
+      await db.update(
         DatabaseConfig.tableTask,
+        {
+          DatabaseConfig.colStatus: TaskStatus.deleted.name,
+          DatabaseConfig.colUpdatedAt: now,
+        },
         where: '${DatabaseConfig.colId} = ?',
         whereArgs: [id],
       );
@@ -539,10 +537,11 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<List<Task>>> search(String query) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
-        where: '${DatabaseConfig.colTitle} LIKE ? OR ${DatabaseConfig.colDescription} LIKE ?',
+        where:
+            '${DatabaseConfig.colTitle} LIKE ? OR ${DatabaseConfig.colDescription} LIKE ?',
         whereArgs: ['%$query%', '%$query%'],
         orderBy: '${DatabaseConfig.colCreatedAt} DESC',
       );
@@ -550,7 +549,8 @@ class SqliteTaskRepository implements ITaskRepository {
       final List<Task> tasks = [];
       for (final map in maps) {
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         tasks.add(_mapToTask(map, tags, goal: goal));
       }
 
@@ -563,23 +563,23 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<List<Task>>> getByTag(String tagId) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Get task IDs with this tag
       final List<Map<String, dynamic>> taskTagMaps = await db.query(
         DatabaseConfig.tableTaskTag,
         where: '${DatabaseConfig.colTagId} = ?',
         whereArgs: [tagId],
       );
 
-      final taskIds = taskTagMaps.map((m) => m[DatabaseConfig.colTaskId] as String).toList();
+      final taskIds =
+          taskTagMaps.map((m) => m[DatabaseConfig.colTaskId] as String).toList();
 
       if (taskIds.isEmpty) {
         return ApiResponse.success([]);
       }
 
-      // Get tasks
-      final placeholders = List.generate(taskIds.length, (_) => '?').join(',');
+      final placeholders =
+          List.generate(taskIds.length, (_) => '?').join(',');
       final List<Map<String, dynamic>> maps = await db.rawQuery(
         'SELECT * FROM ${DatabaseConfig.tableTask} WHERE ${DatabaseConfig.colId} IN ($placeholders) ORDER BY ${DatabaseConfig.colCreatedAt} DESC',
         taskIds,
@@ -588,7 +588,8 @@ class SqliteTaskRepository implements ITaskRepository {
       final List<Task> tasks = [];
       for (final map in maps) {
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         tasks.add(_mapToTask(map, tags, goal: goal));
       }
 
@@ -601,7 +602,7 @@ class SqliteTaskRepository implements ITaskRepository {
   @override
   Future<ApiResponse<List<Task>>> getByGoal(String goalId) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colGoalId} = ?',
@@ -623,12 +624,14 @@ class SqliteTaskRepository implements ITaskRepository {
   }
 
   @override
-  Future<ApiResponse<List<Task>>> getByDateRange(DateTime start, DateTime end) async {
+  Future<ApiResponse<List<Task>>> getByDateRange(
+      DateTime start, DateTime end) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
-        where: '${DatabaseConfig.colDueDate} >= ? AND ${DatabaseConfig.colDueDate} <= ?',
+        where:
+            '${DatabaseConfig.colDueDate} >= ? AND ${DatabaseConfig.colDueDate} <= ?',
         whereArgs: [start.toIso8601String(), end.toIso8601String()],
         orderBy: '${DatabaseConfig.colDueDate} ASC',
       );
@@ -636,7 +639,8 @@ class SqliteTaskRepository implements ITaskRepository {
       final List<Task> tasks = [];
       for (final map in maps) {
         final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
-        final goal = await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
         tasks.add(_mapToTask(map, tags, goal: goal));
       }
 
@@ -647,11 +651,11 @@ class SqliteTaskRepository implements ITaskRepository {
   }
 
   @override
-  Future<ApiResponse<Task>> addFocusDuration(String id, int durationInSeconds) async {
+  Future<ApiResponse<Task>> addFocusDuration(
+      String id, int durationInSeconds) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Get current task
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -663,7 +667,8 @@ class SqliteTaskRepository implements ITaskRepository {
         return ApiResponse.notFound('Task not found: $id');
       }
 
-      final currentDuration = maps.first[DatabaseConfig.colFocusDuration] as int? ?? 0;
+      final currentDuration =
+          maps.first[DatabaseConfig.colFocusDuration] as int? ?? 0;
       final newDuration = currentDuration + durationInSeconds;
 
       await db.update(
@@ -676,7 +681,6 @@ class SqliteTaskRepository implements ITaskRepository {
         whereArgs: [id],
       );
 
-      // Fetch updated task
       final updatedMaps = await db.query(
         DatabaseConfig.tableTask,
         where: '${DatabaseConfig.colId} = ?',
@@ -685,7 +689,8 @@ class SqliteTaskRepository implements ITaskRepository {
       );
 
       final tags = await _getTagsForTask(id);
-      final goal = await _getGoalForTask(updatedMaps.first[DatabaseConfig.colGoalId] as String?);
+      final goal = await _getGoalForTask(
+          updatedMaps.first[DatabaseConfig.colGoalId] as String?);
       return ApiResponse.success(
         _mapToTask(updatedMaps.first, tags, goal: goal),
         message: 'Focus duration updated successfully',
@@ -696,11 +701,11 @@ class SqliteTaskRepository implements ITaskRepository {
   }
 
   @override
-  Future<ApiResponse<void>> updateSortOrders(Map<String, int> taskIdToSortOrder) async {
+  Future<ApiResponse<void>> updateSortOrders(
+      Map<String, int> taskIdToSortOrder) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Use transaction for batch updates
       await db.transaction((txn) async {
         for (final entry in taskIdToSortOrder.entries) {
           await txn.update(
@@ -718,6 +723,94 @@ class SqliteTaskRepository implements ITaskRepository {
       return ApiResponse.success(null, message: 'Sort orders updated successfully');
     } catch (e) {
       return ApiResponse.error('Failed to update sort orders: $e');
+    }
+  }
+
+  @override
+  Future<ApiResponse<List<Task>>> getDeleted() async {
+    try {
+      final db = _dbHelper.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        DatabaseConfig.tableTask,
+        where: "${DatabaseConfig.colStatus} = 'deleted'",
+        orderBy: '${DatabaseConfig.colCreatedAt} DESC',
+      );
+
+      final List<Task> tasks = [];
+      for (final map in maps) {
+        final tags = await _getTagsForTask(map[DatabaseConfig.colId] as String);
+        final goal =
+            await _getGoalForTask(map[DatabaseConfig.colGoalId] as String?);
+        tasks.add(_mapToTask(map, tags, goal: goal));
+      }
+
+      return ApiResponse.success(tasks);
+    } catch (e) {
+      return ApiResponse.error('Failed to fetch deleted tasks: $e');
+    }
+  }
+
+  @override
+  Future<ApiResponse<Task>> restore(String id) async {
+    try {
+      final db = _dbHelper.database;
+
+      final existing = await db.query(
+        DatabaseConfig.tableTask,
+        where: '${DatabaseConfig.colId} = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+
+      if (existing.isEmpty) {
+        return ApiResponse.notFound('Task not found: $id');
+      }
+
+      final now = DateTime.now().toIso8601String();
+      final taskMap = existing.first;
+      final parentTaskId = taskMap[DatabaseConfig.colParentTaskId] as String?;
+
+      // Restore the task itself to pending
+      await db.update(
+        DatabaseConfig.tableTask,
+        {
+          DatabaseConfig.colStatus: TaskStatus.pending.name,
+          DatabaseConfig.colUpdatedAt: now,
+        },
+        where: '${DatabaseConfig.colId} = ?',
+        whereArgs: [id],
+      );
+
+      // If this is a parent task, also restore all its deleted subtasks
+      if (parentTaskId == null) {
+        await db.update(
+          DatabaseConfig.tableTask,
+          {
+            DatabaseConfig.colStatus: TaskStatus.pending.name,
+            DatabaseConfig.colUpdatedAt: now,
+          },
+          where:
+              "${DatabaseConfig.colParentTaskId} = ? AND ${DatabaseConfig.colStatus} = 'deleted'",
+          whereArgs: [id],
+        );
+      }
+
+      final updatedMaps = await db.query(
+        DatabaseConfig.tableTask,
+        where: '${DatabaseConfig.colId} = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+
+      final tags = await _getTagsForTask(id);
+      final goal = await _getGoalForTask(
+          updatedMaps.first[DatabaseConfig.colGoalId] as String?);
+      return ApiResponse.success(
+        _mapToTask(updatedMaps.first, tags, goal: goal),
+        message: 'Task restored successfully',
+      );
+    } catch (e) {
+      return ApiResponse.error('Failed to restore task: $e');
     }
   }
 }
