@@ -27,6 +27,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navSettings => '设置';
 
   @override
+  String get navTrash => '垃圾篓';
+
+  @override
   String get scheduleFilterTitle => '日程';
 
   @override
@@ -578,7 +581,52 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsLanguageEnglish => 'English';
 
   @override
-  String get settingsMoreComing => '更多设置即将上线';
+  String get settingsGeneral => '通用';
+
+  @override
+  String get settingsStartupPage => '启动页';
+
+  @override
+  String get settingsStartupPageHint => '打开 App 后默认进入的页面';
+
+  @override
+  String get settingsStartupList => '任务列表';
+
+  @override
+  String get settingsStartupSchedule => '日程安排';
+
+  @override
+  String get settingsTaskDefaults => '任务';
+
+  @override
+  String get settingsDefaultPriority => '新建任务默认优先级';
+
+  @override
+  String get settingsDefaultPriorityHint => '新建任务时预先选中的优先级';
+
+  @override
+  String get settingsPriorityNone => '不设置';
+
+  @override
+  String get settingsNotifications => '提醒';
+
+  @override
+  String get settingsDailyReminder => '每日任务提醒';
+
+  @override
+  String get settingsDailyReminderHint => '每天在指定时间弹出提醒';
+
+  @override
+  String get settingsDailyReminderTime => '提醒时间';
+
+  @override
+  String get settingsChangeTime => '修改时间';
+
+  @override
+  String get notificationDailyReminderTitle => '今日任务提醒';
+
+  @override
+  String get notificationDailyReminderBody => '打开 Focus Hut，规划今天的任务吧';
 
   @override
   String get settingsDebugTitle => '开发者选项';
@@ -806,6 +854,41 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get profileAccountInfo => '账户信息';
+
+  @override
+  String get profileMemberSince => '注册时间';
+
+  @override
+  String get profileEmailVerified => '邮箱验证';
+
+  @override
+  String get profileVerified => '已验证';
+
+  @override
+  String get profileNotVerified => '未验证';
+
+  @override
+  String get profileRegistrationSource => '注册来源';
+
+  @override
+  String get profileTotalOnlineTime => '总在线时长';
+
+  @override
+  String profileOnlineTimeFormat(int hours, int minutes) {
+    return '$hours小时 $minutes分';
+  }
+
+  @override
+  String get profileLogout => '退出登录';
+
+  @override
+  String get profileLogoutConfirmTitle => '退出登录';
+
+  @override
+  String get profileLogoutConfirmContent => '确定要退出登录吗？';
+
+  @override
   String get datePickerSelectDate => '选择日期';
 
   @override
@@ -900,4 +983,25 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get scheduleOverdueTask => '已过期';
+
+  @override
+  String get trashTitle => '垃圾篓';
+
+  @override
+  String get trashEmpty => '垃圾篓是空的';
+
+  @override
+  String get trashEmptyHint => '删除的任务会显示在这里';
+
+  @override
+  String get trashRestore => '还原';
+
+  @override
+  String get trashRestoreSuccess => '任务已还原';
+
+  @override
+  String get trashParentContext => '父任务';
+
+  @override
+  String get trashDeletedSubtask => '已删除的子任务';
 }

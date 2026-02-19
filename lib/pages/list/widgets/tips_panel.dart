@@ -444,8 +444,9 @@ class TipsPanel extends StatelessWidget {
               title: l10n.tasksWithCount(goalTasks.length),
               children: [
                 for (final task in goalTasks)
-                  _SubtaskMiniItem(
+                  _TaskProgressItem(
                     task: task,
+                    subtasks: _getSubtasks(task.id),
                     priorityColor: _getPriorityColor(task.priority),
                   ),
               ],
@@ -709,6 +710,117 @@ class _ProgressRingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ProgressRingPainter oldDelegate) {
     return oldDelegate.progress != progress;
+  }
+}
+
+/// Shows a task row with optional subtask progress bar (used in goal summary)
+class _TaskProgressItem extends StatelessWidget {
+  final Task task;
+  final List<Task> subtasks;
+  final Color priorityColor;
+
+  const _TaskProgressItem({
+    required this.task,
+    required this.subtasks,
+    required this.priorityColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final isDone = task.status == TaskStatus.completed;
+    final hasSubtasks = subtasks.isNotEmpty;
+    final completedCount =
+        subtasks.where((s) => s.status == TaskStatus.completed).length;
+    final progress = hasSubtasks ? completedCount / subtasks.length : 0.0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Task title row
+          Row(
+            children: [
+              // Status indicator dot
+              Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: isDone ? colors.success : Colors.transparent,
+                  border: Border.all(
+                    color: isDone ? colors.success : colors.checkboxBorder,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: isDone
+                    ? const Icon(Icons.check, size: 9, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task.title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDone ? colors.textHint : colors.textPrimary,
+                    decoration: isDone ? TextDecoration.lineThrough : null,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Priority dot
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: priorityColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+
+          // Subtask progress bar (only when task has subtasks)
+          if (hasSubtasks) ...[
+            const SizedBox(height: 5),
+            Padding(
+              padding: const EdgeInsets.only(left: 22),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: colors.divider,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress >= 1.0
+                              ? AppTheme.successColor
+                              : colors.primary,
+                        ),
+                        minHeight: 3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$completedCount/${subtasks.length}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: colors.textHint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

@@ -34,7 +34,7 @@ class SqliteGoalRepository implements IGoalRepository {
   @override
   Future<ApiResponse<List<Goal>>> getAll() async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableGoal,
         orderBy: '${DatabaseConfig.colDueDate} ASC',
@@ -50,7 +50,7 @@ class SqliteGoalRepository implements IGoalRepository {
   @override
   Future<ApiResponse<Goal>> getById(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableGoal,
         where: '${DatabaseConfig.colId} = ?',
@@ -71,9 +71,9 @@ class SqliteGoalRepository implements IGoalRepository {
   @override
   Future<ApiResponse<Goal>> create(Goal goal) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if goal with same name exists
+      // Check if goal with same name already exists
       final existing = await db.query(
         DatabaseConfig.tableGoal,
         where: '${DatabaseConfig.colName} = ?',
@@ -82,7 +82,10 @@ class SqliteGoalRepository implements IGoalRepository {
       );
 
       if (existing.isNotEmpty) {
-        return ApiResponse.error('Goal with name "${goal.name}" already exists', statusCode: 409);
+        return ApiResponse.error(
+          'Goal with name "${goal.name}" already exists',
+          statusCode: 409,
+        );
       }
 
       await db.insert(DatabaseConfig.tableGoal, _goalToMap(goal));
@@ -95,9 +98,8 @@ class SqliteGoalRepository implements IGoalRepository {
   @override
   Future<ApiResponse<Goal>> update(Goal goal) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if goal exists
       final existing = await db.query(
         DatabaseConfig.tableGoal,
         where: '${DatabaseConfig.colId} = ?',
@@ -118,7 +120,10 @@ class SqliteGoalRepository implements IGoalRepository {
       );
 
       if (nameConflict.isNotEmpty) {
-        return ApiResponse.error('Goal with name "${goal.name}" already exists', statusCode: 409);
+        return ApiResponse.error(
+          'Goal with name "${goal.name}" already exists',
+          statusCode: 409,
+        );
       }
 
       final updatedGoal = goal.copyWith(updatedAt: DateTime.now());
@@ -138,9 +143,8 @@ class SqliteGoalRepository implements IGoalRepository {
   @override
   Future<ApiResponse<void>> delete(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if goal exists
       final existing = await db.query(
         DatabaseConfig.tableGoal,
         where: '${DatabaseConfig.colId} = ?',

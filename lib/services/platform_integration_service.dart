@@ -104,6 +104,9 @@ class PlatformIntegrationService {
         _hotkeyService = hotkeyService ?? HotkeyService(),
         _notificationService = notificationService ?? NotificationService();
 
+  /// The notification service instance, used for daily reminders
+  NotificationService get notificationService => _notificationService;
+
   /// Set the router for focus page navigation from tray
   void setRouter(GoRouter router) {
     _router = router;

@@ -34,7 +34,7 @@ class SqliteTagRepository implements ITagRepository {
   @override
   Future<ApiResponse<List<Tag>>> getAll() async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTag,
         orderBy: '${DatabaseConfig.colCreatedAt} DESC',
@@ -50,7 +50,7 @@ class SqliteTagRepository implements ITagRepository {
   @override
   Future<ApiResponse<Tag>> getById(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTag,
         where: '${DatabaseConfig.colId} = ?',
@@ -71,9 +71,9 @@ class SqliteTagRepository implements ITagRepository {
   @override
   Future<ApiResponse<Tag>> create(Tag tag) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if tag with same name exists
+      // Check if tag with same name already exists
       final existing = await db.query(
         DatabaseConfig.tableTag,
         where: '${DatabaseConfig.colName} = ?',
@@ -82,7 +82,10 @@ class SqliteTagRepository implements ITagRepository {
       );
 
       if (existing.isNotEmpty) {
-        return ApiResponse.error('Tag with name "${tag.name}" already exists', statusCode: 409);
+        return ApiResponse.error(
+          'Tag with name "${tag.name}" already exists',
+          statusCode: 409,
+        );
       }
 
       await db.insert(DatabaseConfig.tableTag, _tagToMap(tag));
@@ -95,9 +98,8 @@ class SqliteTagRepository implements ITagRepository {
   @override
   Future<ApiResponse<Tag>> update(Tag tag) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if tag exists
       final existing = await db.query(
         DatabaseConfig.tableTag,
         where: '${DatabaseConfig.colId} = ?',
@@ -118,7 +120,10 @@ class SqliteTagRepository implements ITagRepository {
       );
 
       if (nameConflict.isNotEmpty) {
-        return ApiResponse.error('Tag with name "${tag.name}" already exists', statusCode: 409);
+        return ApiResponse.error(
+          'Tag with name "${tag.name}" already exists',
+          statusCode: 409,
+        );
       }
 
       final updatedTag = tag.copyWith(updatedAt: DateTime.now());
@@ -138,9 +143,8 @@ class SqliteTagRepository implements ITagRepository {
   @override
   Future<ApiResponse<void>> delete(String id) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
 
-      // Check if tag exists
       final existing = await db.query(
         DatabaseConfig.tableTag,
         where: '${DatabaseConfig.colId} = ?',
@@ -152,7 +156,6 @@ class SqliteTagRepository implements ITagRepository {
         return ApiResponse.notFound('Tag not found: $id');
       }
 
-      // Delete tag (cascade will handle task_tags)
       await db.delete(
         DatabaseConfig.tableTag,
         where: '${DatabaseConfig.colId} = ?',
@@ -168,7 +171,7 @@ class SqliteTagRepository implements ITagRepository {
   @override
   Future<ApiResponse<List<Tag>>> search(String query) async {
     try {
-      final db = await _dbHelper.database;
+      final db = _dbHelper.database;
       final List<Map<String, dynamic>> maps = await db.query(
         DatabaseConfig.tableTag,
         where: '${DatabaseConfig.colName} LIKE ?',

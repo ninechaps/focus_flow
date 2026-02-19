@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -5,10 +7,15 @@ import '../core/api/http_client.dart';
 import '../core/auth/auth_interceptor.dart';
 import '../core/auth/auth_storage.dart';
 import '../core/crypto/rsa_encrypt_service.dart';
+import '../database/database_helper.dart';
 import '../models/login_request.dart';
 import '../models/user.dart';
 import '../repositories/interfaces/auth_repository_interface.dart';
 import '../services/device_info_service.dart';
+
+/// 主动刷新间隔。应小于 accessToken 实际有效期。
+/// accessToken 有效期为 24h，提前 2h 刷新，设为 22h。
+const Duration kTokenRefreshInterval = Duration(hours: 22);
 
 /// Manages authentication state for the entire application.
 ///
@@ -24,6 +31,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   User? _currentUser;
+  Timer? _refreshTimer;
 
   bool get isAuthenticated => _isAuthenticated;
   bool get isInitialized => _isInitialized;
@@ -42,6 +50,43 @@ class AuthProvider extends ChangeNotifier {
     _initAuth();
   }
 
+  /// 启动主动刷新定时器
+  void _startRefreshTimer() {
+    _stopRefreshTimer();
+    _refreshTimer = Timer.periodic(kTokenRefreshInterval, (_) {
+      _proactiveRefresh();
+    });
+  }
+
+  /// 取消定时器
+  void _stopRefreshTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  /// 主动刷新 token（静默执行，失败不强退）
+  Future<void> _proactiveRefresh() async {
+    try {
+      final refreshToken = await _storage.readRefreshToken();
+      if (refreshToken == null) return;
+
+      final response = await _authRepository.refreshToken(refreshToken);
+      if (response.isSuccess && response.data != null) {
+        final tokenData = response.data!;
+        await _storage.storeTokens(
+          accessToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken,
+        );
+        debugPrint('[AUTH] Proactive token refresh succeeded.');
+      } else {
+        debugPrint('[AUTH] Proactive token refresh failed: ${response.message}');
+        // 不强退——被动拦截器（AuthInterceptor）作为兜底
+      }
+    } catch (e) {
+      debugPrint('[AUTH] Proactive token refresh error: $e');
+    }
+  }
+
   /// Set up the AuthInterceptor with force-logout callback
   void _setupInterceptor() {
     final interceptor = AuthInterceptor(
@@ -53,7 +98,9 @@ class AuthProvider extends ChangeNotifier {
 
   /// Called by AuthInterceptor when token refresh fails
   Future<void> _onForceLogout() async {
+    _stopRefreshTimer();
     await _storage.clearAll();
+    await DatabaseHelper.instance.closeDatabase();
     _isAuthenticated = false;
     _currentUser = null;
     _errorMessage = 'session_expired';
@@ -76,7 +123,9 @@ class AuthProvider extends ChangeNotifier {
       final response = await _authRepository.getCurrentUser();
       if (response.isSuccess && response.data != null) {
         _currentUser = response.data;
+        await DatabaseHelper.instance.initForUser(_currentUser!.id);
         _isAuthenticated = true;
+        _startRefreshTimer();
       } else {
         // Token invalid or server unreachable — clear and require re-login
         await _storage.clearAll();
@@ -169,7 +218,9 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('[AUTH] Step 5 OK');
 
       _currentUser = authData.user;
+      await DatabaseHelper.instance.initForUser(_currentUser!.id);
       _isAuthenticated = true;
+      _startRefreshTimer();
       _errorMessage = null;
       _isLoading = false;
       notifyListeners();
@@ -186,6 +237,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// Logout: notify server, clear local tokens, reset state.
   Future<void> logout() async {
+    _stopRefreshTimer();
     // Attempt server-side logout (best effort, don't block on failure)
     try {
       final refreshToken = await _storage.readRefreshToken();
@@ -202,6 +254,7 @@ class AuthProvider extends ChangeNotifier {
 
     // Clear local state regardless of server response
     await _storage.clearAll();
+    await DatabaseHelper.instance.closeDatabase();
     _isAuthenticated = false;
     _currentUser = null;
     _errorMessage = null;

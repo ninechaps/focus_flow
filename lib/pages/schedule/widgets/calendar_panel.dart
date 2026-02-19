@@ -390,12 +390,12 @@ class CalendarPanel extends StatelessWidget {
     );
   }
 
-  /// 判断任务在该日期格中是否为过期显示
+  /// 判断任务是否已过期（due date 在今天之前且未完成）
   bool _isOverdueInCell(Task task, DateTime cellDate, DateTime todayDate) {
     if (task.dueDate == null) return false;
+    if (task.status == TaskStatus.completed) return false;
     final taskDue = DateTime(task.dueDate!.year, task.dueDate!.month, task.dueDate!.day);
-    // 如果任务原始 dueDate 早于今天，且当前格子是今天，说明是过期继承
-    return taskDue.isBefore(todayDate) && _isSameDay(cellDate, todayDate);
+    return taskDue.isBefore(todayDate);
   }
 }
 

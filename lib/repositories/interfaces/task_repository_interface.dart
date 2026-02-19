@@ -49,4 +49,10 @@ abstract class ITaskRepository {
 
   /// Update sort order for multiple tasks (for drag-and-drop reordering)
   Future<ApiResponse<void>> updateSortOrders(Map<String, int> taskIdToSortOrder);
+
+  /// Get all soft-deleted tasks (status == deleted)
+  Future<ApiResponse<List<Task>>> getDeleted();
+
+  /// Restore a soft-deleted task back to pending status
+  Future<ApiResponse<Task>> restore(String id);
 }

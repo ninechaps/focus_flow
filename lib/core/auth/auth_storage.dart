@@ -9,6 +9,7 @@ abstract class AuthStorageKeys {
   static const sessionId = 'auth_session_id';
   static const userInfo = 'auth_user_info';
   static const deviceId = 'auth_device_id';
+  static const tokenIssuedAt = 'auth_token_issued_at';
 }
 
 /// Encapsulates flutter_secure_storage for authentication data persistence.
@@ -82,9 +83,25 @@ class AuthStorage {
     return deviceId;
   }
 
+  // --- Token Issued At ---
+
+  Future<void> writeTokenIssuedAt(DateTime issuedAt) async {
+    await _storage.write(
+      key: AuthStorageKeys.tokenIssuedAt,
+      value: issuedAt.toIso8601String(),
+    );
+  }
+
+  Future<DateTime?> readTokenIssuedAt() async {
+    final raw = await _storage.read(key: AuthStorageKeys.tokenIssuedAt);
+    if (raw == null) return null;
+    return DateTime.tryParse(raw);
+  }
+
   // --- Batch Operations ---
 
-  /// Store all auth tokens from a login/refresh response
+  /// Store all auth tokens from a login/refresh response.
+  /// Automatically records the current time as the issuance timestamp.
   Future<void> storeTokens({
     required String accessToken,
     required String refreshToken,
@@ -93,6 +110,7 @@ class AuthStorage {
     await Future.wait([
       writeAccessToken(accessToken),
       writeRefreshToken(refreshToken),
+      writeTokenIssuedAt(DateTime.now()),
       if (sessionId != null) writeSessionId(sessionId),
     ]);
   }
@@ -104,6 +122,7 @@ class AuthStorage {
       _storage.delete(key: AuthStorageKeys.refreshToken),
       _storage.delete(key: AuthStorageKeys.sessionId),
       _storage.delete(key: AuthStorageKeys.userInfo),
+      _storage.delete(key: AuthStorageKeys.tokenIssuedAt),
     ]);
   }
 }

@@ -12,6 +12,7 @@ import './providers/task_provider.dart';
 import './providers/focus_provider.dart';
 import './providers/theme_provider.dart';
 import './providers/locale_provider.dart';
+import './providers/user_preferences_provider.dart';
 import './theme/app_theme.dart';
 import './repositories/repository_provider.dart';
 import './repositories/http/http_auth_repository.dart';
@@ -41,6 +42,9 @@ void main() async {
   final focusProvider = FocusProvider();
   final taskProvider = TaskProvider();
 
+  // Create user preferences early so router can read startup page synchronously
+  final userPreferences = UserPreferencesProvider();
+
   // Create the platform integration service (tray, hotkeys, notifications)
   final platformService = PlatformIntegrationService(
     focusProvider: focusProvider,
@@ -52,6 +56,7 @@ void main() async {
     focusProvider: focusProvider,
     taskProvider: taskProvider,
     platformService: platformService,
+    userPreferences: userPreferences,
   ));
 
   doWhenWindowReady(() {
@@ -69,6 +74,7 @@ class MyApp extends StatefulWidget {
   final FocusProvider focusProvider;
   final TaskProvider taskProvider;
   final PlatformIntegrationService platformService;
+  final UserPreferencesProvider userPreferences;
 
   const MyApp({
     super.key,
@@ -76,6 +82,7 @@ class MyApp extends StatefulWidget {
     required this.focusProvider,
     required this.taskProvider,
     required this.platformService,
+    required this.userPreferences,
   });
 
   @override
@@ -83,7 +90,10 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late final GoRouter _router = router(authProvider: widget.authProvider);
+  late final GoRouter _router = router(
+    authProvider: widget.authProvider,
+    userPreferences: widget.userPreferences,
+  );
 
   @override
   void initState() {
@@ -94,6 +104,10 @@ class _MyAppState extends State<MyApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         await widget.platformService.init();
+        // Wire up daily reminder after notification service is initialized
+        widget.userPreferences.setNotificationService(
+          widget.platformService.notificationService,
+        );
       } catch (e) {
         debugPrint('Platform integration init failed: $e');
       }
@@ -104,6 +118,12 @@ class _MyAppState extends State<MyApp> {
   void _updatePlatformStrings(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     if (l10n == null) return;
+
+    // Update daily reminder strings in user preferences
+    widget.userPreferences.updateReminderStrings(
+      title: l10n.notificationDailyReminderTitle,
+      body: l10n.notificationDailyReminderBody,
+    );
 
     widget.platformService.updateLocalizedStrings(PlatformLocalizedStrings(
       trayStartFocus: l10n.trayStartFocus,
@@ -149,6 +169,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: widget.authProvider),
         ChangeNotifierProvider.value(value: widget.taskProvider),
         ChangeNotifierProvider.value(value: widget.focusProvider),
+        ChangeNotifierProvider.value(value: widget.userPreferences),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
         ChangeNotifierProvider(create: (context) => LocaleProvider()),
       ],

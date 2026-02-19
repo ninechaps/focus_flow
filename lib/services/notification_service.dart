@@ -78,6 +78,29 @@ class NotificationService {
     );
   }
 
+  /// Show a daily task reminder notification
+  Future<void> showDailyReminder({
+    required String title,
+    required String body,
+  }) async {
+    if (!_isInitialized) return;
+
+    const details = NotificationDetails(
+      macOS: DarwinNotificationDetails(
+        sound: 'default',
+        presentAlert: true,
+        presentSound: true,
+      ),
+    );
+
+    await _plugin.show(
+      id: 2,
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
+  }
+
   /// Cancel all pending notifications
   Future<void> dispose() async {
     await _plugin.cancelAll();
