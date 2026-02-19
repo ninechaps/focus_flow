@@ -4,19 +4,24 @@ import 'package:uuid/uuid.dart';
 
 /// Secure storage key constants for authentication data
 abstract class AuthStorageKeys {
-  static const accessToken = 'auth_access_token';
-  static const refreshToken = 'auth_refresh_token';
-  static const sessionId = 'auth_session_id';
-  static const userInfo = 'auth_user_info';
-  static const deviceId = 'auth_device_id';
-  static const tokenIssuedAt = 'auth_token_issued_at';
+  static const accessToken = 'access_token';
+  static const refreshToken = 'refresh_token';
+  static const sessionId = 'session_id';
+  static const userInfo = 'user_info';
+  static const deviceId = 'device_id';
+  static const tokenIssuedAt = 'token_issued_at';
 }
 
 /// Encapsulates flutter_secure_storage for authentication data persistence.
 ///
-/// All tokens and sensitive data are stored in macOS Keychain via
-/// flutter_secure_storage, providing OS-level encryption.
+/// All auth data is stored as a **single JSON bundle** under one Keychain item,
+/// reducing macOS Keychain access prompts from N (one per field) to 1.
+///
+/// Uses [MacOsOptions(useDataProtectionKeyChain: true)] so the item is bound
+/// to the app's sandbox and does not trigger user-confirmation dialogs.
 class AuthStorage {
+  static const _bundleKey = 'auth_bundle_v2';
+
   final FlutterSecureStorage _storage;
 
   AuthStorage({FlutterSecureStorage? storage})
@@ -27,102 +32,140 @@ class AuthStorage {
               ),
             );
 
-  // --- Access Token ---
+  // ---------------------------------------------------------------------------
+  // Internal: bundle read / write  (1 Keychain item for all auth data)
+  // ---------------------------------------------------------------------------
+
+  Future<Map<String, dynamic>> _readBundle() async {
+    final raw = await _storage.read(key: _bundleKey);
+    if (raw == null) return {};
+    try {
+      return jsonDecode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _writeBundle(Map<String, dynamic> bundle) async {
+    await _storage.write(key: _bundleKey, value: jsonEncode(bundle));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Access Token
+  // ---------------------------------------------------------------------------
 
   Future<String?> readAccessToken() async {
-    return _storage.read(key: AuthStorageKeys.accessToken);
+    final bundle = await _readBundle();
+    return bundle[AuthStorageKeys.accessToken] as String?;
   }
 
   Future<void> writeAccessToken(String token) async {
-    await _storage.write(key: AuthStorageKeys.accessToken, value: token);
+    final bundle = await _readBundle();
+    bundle[AuthStorageKeys.accessToken] = token;
+    await _writeBundle(bundle);
   }
 
-  // --- Refresh Token ---
+  // ---------------------------------------------------------------------------
+  // Refresh Token
+  // ---------------------------------------------------------------------------
 
   Future<String?> readRefreshToken() async {
-    return _storage.read(key: AuthStorageKeys.refreshToken);
+    final bundle = await _readBundle();
+    return bundle[AuthStorageKeys.refreshToken] as String?;
   }
 
   Future<void> writeRefreshToken(String token) async {
-    await _storage.write(key: AuthStorageKeys.refreshToken, value: token);
+    final bundle = await _readBundle();
+    bundle[AuthStorageKeys.refreshToken] = token;
+    await _writeBundle(bundle);
   }
 
-  // --- Session ID ---
+  // ---------------------------------------------------------------------------
+  // Session ID
+  // ---------------------------------------------------------------------------
 
   Future<String?> readSessionId() async {
-    return _storage.read(key: AuthStorageKeys.sessionId);
+    final bundle = await _readBundle();
+    return bundle[AuthStorageKeys.sessionId] as String?;
   }
 
   Future<void> writeSessionId(String sessionId) async {
-    await _storage.write(key: AuthStorageKeys.sessionId, value: sessionId);
+    final bundle = await _readBundle();
+    bundle[AuthStorageKeys.sessionId] = sessionId;
+    await _writeBundle(bundle);
   }
 
-  // --- User Info (JSON) ---
+  // ---------------------------------------------------------------------------
+  // User Info (JSON map)
+  // ---------------------------------------------------------------------------
 
   Future<Map<String, dynamic>?> readUserInfo() async {
-    final raw = await _storage.read(key: AuthStorageKeys.userInfo);
+    final bundle = await _readBundle();
+    final raw = bundle[AuthStorageKeys.userInfo];
     if (raw == null) return null;
-    return jsonDecode(raw) as Map<String, dynamic>;
+    return raw as Map<String, dynamic>;
   }
 
   Future<void> writeUserInfo(Map<String, dynamic> userJson) async {
-    await _storage.write(
-      key: AuthStorageKeys.userInfo,
-      value: jsonEncode(userJson),
-    );
+    final bundle = await _readBundle();
+    bundle[AuthStorageKeys.userInfo] = userJson;
+    await _writeBundle(bundle);
   }
 
-  // --- Device ID (generated once, persisted) ---
+  // ---------------------------------------------------------------------------
+  // Device ID (generated once, persisted in the same bundle)
+  // ---------------------------------------------------------------------------
 
   Future<String> getOrCreateDeviceId() async {
-    final existing = await _storage.read(key: AuthStorageKeys.deviceId);
+    final bundle = await _readBundle();
+    final existing = bundle[AuthStorageKeys.deviceId] as String?;
     if (existing != null) return existing;
 
     final deviceId = const Uuid().v4();
-    await _storage.write(key: AuthStorageKeys.deviceId, value: deviceId);
+    bundle[AuthStorageKeys.deviceId] = deviceId;
+    await _writeBundle(bundle);
     return deviceId;
   }
 
-  // --- Token Issued At ---
+  // ---------------------------------------------------------------------------
+  // Token Issued At
+  // ---------------------------------------------------------------------------
 
   Future<void> writeTokenIssuedAt(DateTime issuedAt) async {
-    await _storage.write(
-      key: AuthStorageKeys.tokenIssuedAt,
-      value: issuedAt.toIso8601String(),
-    );
+    final bundle = await _readBundle();
+    bundle[AuthStorageKeys.tokenIssuedAt] = issuedAt.toIso8601String();
+    await _writeBundle(bundle);
   }
 
   Future<DateTime?> readTokenIssuedAt() async {
-    final raw = await _storage.read(key: AuthStorageKeys.tokenIssuedAt);
+    final bundle = await _readBundle();
+    final raw = bundle[AuthStorageKeys.tokenIssuedAt] as String?;
     if (raw == null) return null;
     return DateTime.tryParse(raw);
   }
 
-  // --- Batch Operations ---
+  // ---------------------------------------------------------------------------
+  // Batch Operations
+  // ---------------------------------------------------------------------------
 
-  /// Store all auth tokens from a login/refresh response.
-  /// Automatically records the current time as the issuance timestamp.
+  /// Store all auth tokens atomically in a single Keychain write.
+  /// Also records the current time as the issuance timestamp.
   Future<void> storeTokens({
     required String accessToken,
     required String refreshToken,
     String? sessionId,
   }) async {
-    await Future.wait([
-      writeAccessToken(accessToken),
-      writeRefreshToken(refreshToken),
-      writeTokenIssuedAt(DateTime.now()),
-      if (sessionId != null) writeSessionId(sessionId),
-    ]);
+    final bundle = await _readBundle();
+    bundle[AuthStorageKeys.accessToken] = accessToken;
+    bundle[AuthStorageKeys.refreshToken] = refreshToken;
+    bundle[AuthStorageKeys.tokenIssuedAt] = DateTime.now().toIso8601String();
+    if (sessionId != null) bundle[AuthStorageKeys.sessionId] = sessionId;
+    await _writeBundle(bundle);
   }
 
-  /// Clear all authentication data (used on logout)
+  /// Clear all authentication data (used on logout).
+  /// Deletes the entire bundle with a single Keychain operation.
   Future<void> clearAll() async {
-    await Future.wait([
-      _storage.delete(key: AuthStorageKeys.accessToken),
-      _storage.delete(key: AuthStorageKeys.refreshToken),
-      _storage.delete(key: AuthStorageKeys.sessionId),
-      _storage.delete(key: AuthStorageKeys.userInfo),
-      _storage.delete(key: AuthStorageKeys.tokenIssuedAt),
-    ]);
+    await _storage.delete(key: _bundleKey);
   }
 }
