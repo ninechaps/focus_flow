@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class AppHttpConfig {
   /// Base URL for the authentication API server.
   /// TODO: Move to environment configuration before production release.
-  static const String baseUrl = 'http://localhost:3000';
+  static const String baseUrl = 'http://localhost:3002';
 
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 15);
@@ -43,6 +43,7 @@ class HttpClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'X-Client-Type': 'macos-app',
       },
     ));
 
@@ -81,6 +82,7 @@ class HttpClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'X-Client-Type': 'macos-app',
       },
     ));
   }
