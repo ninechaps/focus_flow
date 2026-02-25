@@ -274,4 +274,24 @@ class AuthProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
   }
+
+  /// Refresh the current user's profile from the server.
+  ///
+  /// Use this after updating user info on the web to sync changes to the client.
+  /// Returns true if the refresh succeeded.
+  Future<bool> refreshCurrentUser() async {
+    try {
+      final response = await _authRepository.getCurrentUser();
+      if (response.isSuccess && response.data != null) {
+        _currentUser = response.data;
+        await _storage.writeUserInfo(response.data!.toJson());
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[AUTH] refreshCurrentUser failed: $e');
+      return false;
+    }
+  }
 }

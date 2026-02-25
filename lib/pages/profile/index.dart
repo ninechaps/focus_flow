@@ -5,8 +5,21 @@ import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
 /// Profile page - User profile information with account details and sign-out
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _isRefreshing = false;
+
+  Future<void> _handleRefresh(AuthProvider authProvider) async {
+    setState(() => _isRefreshing = true);
+    await authProvider.refreshCurrentUser();
+    if (mounted) setState(() => _isRefreshing = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,16 +41,38 @@ class ProfilePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Page header
-              Text(
-                l10n.profileTitle,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: AppTheme.spacingSm),
-              Text(
-                l10n.profileSubtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.textSecondary,
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.profileTitle,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: AppTheme.spacingSm),
+                        Text(
+                          l10n.profileSubtitle,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: colors.textSecondary,
+                              ),
+                        ),
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    tooltip: '刷新用户资料',
+                    onPressed: _isRefreshing ? null : () => _handleRefresh(authProvider),
+                    icon: _isRefreshing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh_rounded),
+                  ),
+                ],
               ),
               const SizedBox(height: AppTheme.spacingXl),
 
